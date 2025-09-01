@@ -60,6 +60,28 @@ async def desembolsar_lote_endpoint(request: DesembolsarLoteRequest):
 # --- Routers ---
 app.include_router(liquidaciones.router, prefix="/liquidaciones", tags=["liquidaciones"])
 
+@app.post("/calcular_desembolso_lote")
+async def calcular_desembolso_lote_endpoint(payload: List[Dict[str, Any]]):
+    """
+    Calcula el desembolso inicial para un lote de facturas.
+    """
+    try:
+        result = procesar_lote_desembolso_inicial(payload)
+        return {"resultados_por_factura": result}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/encontrar_tasa_lote")
+async def encontrar_tasa_lote_endpoint(payload: List[Dict[str, Any]]):
+    """
+    Encuentra la tasa de avance para un lote de facturas dado un monto objetivo.
+    """
+    try:
+        result = procesar_lote_encontrar_tasa(payload)
+        return {"resultados_por_factura": result}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 # --- Endpoints Antiguos / de Cálculo ---
 
 # ... (resto de los endpoints sin cambios)
