@@ -9,22 +9,7 @@ if src_path not in sys.path:
 
 import streamlit as st
 
-# --- DEBUGGING SECRETS ---
-st.write("--- Debugging Secrets ---")
-if "supabase" in st.secrets:
-    st.write("✅ [supabase] section exists.")
-    if "url" in st.secrets.supabase:
-        st.write("✅ supabase.url exists.")
-    else:
-        st.write("❌ supabase.url NOT FOUND.")
-    if "key" in st.secrets.supabase:
-        st.write("✅ supabase.key exists.")
-    else:
-        st.write("❌ supabase.key NOT FOUND.")
-else:
-    st.write("❌ [supabase] section NOT FOUND.")
-st.write("--- End Debugging ---")
-# --- END DEBUGGING ---
+
 
 from streamlit_mermaid import st_mermaid
 from streamlit_oauth import OAuth2Component
