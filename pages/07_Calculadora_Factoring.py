@@ -148,14 +148,14 @@ if 'fijar_condiciones' not in st.session_state: st.session_state.fijar_condicion
 
 # Global settings for affiliation commission
 if 'aplicar_comision_afiliacion_global' not in st.session_state: st.session_state.aplicar_comision_afiliacion_global = False
-if 'comision_afiliacion_pen_global' not in st.session_state: st.session_state.comision_afiliacion_pen_global = 200.0
-if 'comision_afiliacion_usd_global' not in st.session_state: st.session_state.comision_afiliacion_usd_global = 50.0
+if 'comision_afiliacion_pen_global' not in st.session_state: st.session_state.comision_afiliacion_pen_global = 0.0
+if 'comision_afiliacion_usd_global' not in st.session_state: st.session_state.comision_afiliacion_usd_global = 0.0
 
 # Global settings for structuring commission
 if 'aplicar_comision_estructuracion_global' not in st.session_state: st.session_state.aplicar_comision_estructuracion_global = False
-if 'comision_estructuracion_pct_global' not in st.session_state: st.session_state.comision_estructuracion_pct_global = 0.5
-if 'comision_estructuracion_min_pen_global' not in st.session_state: st.session_state.comision_estructuracion_min_pen_global = 200.0
-if 'comision_estructuracion_min_usd_global' not in st.session_state: st.session_state.comision_estructuracion_min_usd_global = 50.0
+if 'comision_estructuracion_pct_global' not in st.session_state: st.session_state.comision_estructuracion_pct_global = 0.0
+if 'comision_estructuracion_min_pen_global' not in st.session_state: st.session_state.comision_estructuracion_min_pen_global = 0.0
+if 'comision_estructuracion_min_usd_global' not in st.session_state: st.session_state.comision_estructuracion_min_usd_global = 0.0
 
 # Global settings for due date
 if 'aplicar_fecha_vencimiento_global' not in st.session_state: st.session_state.aplicar_fecha_vencimiento_global = False
@@ -167,7 +167,7 @@ if 'fecha_desembolso_global' not in st.session_state: st.session_state.fecha_des
 
 # Global settings for minimum interest days
 if 'aplicar_dias_interes_minimo_global' not in st.session_state: st.session_state.aplicar_dias_interes_minimo_global = False
-if 'dias_interes_minimo_global' not in st.session_state: st.session_state.dias_interes_minimo_global = 15
+if 'dias_interes_minimo_global' not in st.session_state: st.session_state.dias_interes_minimo_global = 0
 
 # Default values for new invoices (these will be copied into each invoice's dict)
 if 'default_comision_afiliacion_pen' not in st.session_state: st.session_state.default_comision_afiliacion_pen = 0.0
@@ -196,13 +196,12 @@ with col3:
 
 # --- UI: Número de Facturas a Simular ---
 with st.expander("Configuración de Simulación", expanded=True):
-    st.session_state.num_invoices_to_simulate = st.number_input(
+    st.number_input(
         "Número de Facturas a Simular",
         min_value=1,
         max_value=10,
-        value=st.session_state.num_invoices_to_simulate,
         step=1,
-        key="num_invoices_input"
+        key="num_invoices_to_simulate"
     )
 
     if len(st.session_state.invoices_data) != st.session_state.num_invoices_to_simulate:
@@ -256,7 +255,6 @@ if st.session_state.invoices_data:
         st.number_input(
             "Comisión de Estructuración (%)",
             min_value=0.0,
-            value=st.session_state.comision_estructuracion_pct_global,
             key='comision_estructuracion_pct_global',
             format="%.2f",
             disabled=not st.session_state.get('aplicar_comision_estructuracion_global', False)
@@ -264,7 +262,6 @@ if st.session_state.invoices_data:
         st.number_input(
             "Comisión Mínima (PEN)",
             min_value=0.0,
-            value=st.session_state.comision_estructuracion_min_pen_global,
             key='comision_estructuracion_min_pen_global',
             format="%.2f",
             disabled=not st.session_state.get('aplicar_comision_estructuracion_global', False)
@@ -272,7 +269,6 @@ if st.session_state.invoices_data:
         st.number_input(
             "Comisión Mínima (USD)",
             min_value=0.0,
-            value=st.session_state.comision_estructuracion_min_usd_global,
             key='comision_estructuracion_min_usd_global',
             format="%.2f",
             disabled=not st.session_state.get('aplicar_comision_estructuracion_global', False)
@@ -287,7 +283,6 @@ if st.session_state.invoices_data:
         st.number_input(
             "Monto Comisión Afiliación (PEN)",
             min_value=0.0,
-            value=st.session_state.comision_afiliacion_pen_global,
             key='comision_afiliacion_pen_global',
             format="%.2f",
             disabled=not st.session_state.get('aplicar_comision_afiliacion_global', False)
@@ -295,7 +290,6 @@ if st.session_state.invoices_data:
         st.number_input(
             "Monto Comisión Afiliación (USD)",
             min_value=0.0,
-            value=st.session_state.comision_afiliacion_usd_global,
             key='comision_afiliacion_usd_global',
             format="%.2f",
             disabled=not st.session_state.get('aplicar_comision_afiliacion_global', False)
@@ -312,7 +306,6 @@ if st.session_state.invoices_data:
         )
         st.number_input(
             "Tasa de Avance Global (%)",
-            value=st.session_state.tasa_avance_global,
             key='tasa_avance_global',
             min_value=0.0,
             format="%.2f",
@@ -327,7 +320,6 @@ if st.session_state.invoices_data:
         )
         st.number_input(
             "Interés Mensual Global (%)",
-            value=st.session_state.interes_mensual_global,
             key='interes_mensual_global',
             min_value=0.0,
             format="%.2f",
@@ -367,7 +359,7 @@ if st.session_state.invoices_data:
 
         st.write("**Días Mínimos de Interés**")
         st.checkbox("Aplicar Días Mínimos", key='aplicar_dias_interes_minimo_global', on_change=handle_global_min_interest_days_change)
-        st.number_input("Valor Días Mínimos", value=st.session_state.dias_interes_minimo_global, key='dias_interes_minimo_global', min_value=0, step=1, on_change=handle_global_min_interest_days_change)
+        st.number_input("Valor Días Mínimos", key='dias_interes_minimo_global', min_value=0, step=1, on_change=handle_global_min_interest_days_change)
 
 
     st.write("##### Cálculo Global de Todas las Facturas")

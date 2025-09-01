@@ -310,7 +310,6 @@ if st.session_state.invoices_data:
         st.number_input(
             "Comisión de Estructuración (%)",
             min_value=0.0,
-            value=st.session_state.comision_estructuracion_pct_global,
             key='comision_estructuracion_pct_global',
             format="%.2f",
             disabled=not st.session_state.get('aplicar_comision_estructuracion_global', False)
@@ -318,7 +317,6 @@ if st.session_state.invoices_data:
         st.number_input(
             "Comisión Mínima (PEN)",
             min_value=0.0,
-            value=st.session_state.comision_estructuracion_min_pen_global,
             key='comision_estructuracion_min_pen_global',
             format="%.2f",
             disabled=not st.session_state.get('aplicar_comision_estructuracion_global', False)
@@ -326,7 +324,6 @@ if st.session_state.invoices_data:
         st.number_input(
             "Comisión Mínima (USD)",
             min_value=0.0,
-            value=st.session_state.comision_estructuracion_min_usd_global,
             key='comision_estructuracion_min_usd_global',
             format="%.2f",
             disabled=not st.session_state.get('aplicar_comision_estructuracion_global', False)
@@ -341,7 +338,6 @@ if st.session_state.invoices_data:
         st.number_input(
             "Monto Comisión Afiliación (PEN)",
             min_value=0.0,
-            value=st.session_state.comision_afiliacion_pen_global,
             key='comision_afiliacion_pen_global',
             format="%.2f",
             disabled=not st.session_state.get('aplicar_comision_afiliacion_global', False)
@@ -349,7 +345,6 @@ if st.session_state.invoices_data:
         st.number_input(
             "Monto Comisión Afiliación (USD)",
             min_value=0.0,
-            value=st.session_state.comision_afiliacion_usd_global,
             key='comision_afiliacion_usd_global',
             format="%.2f",
             disabled=not st.session_state.get('aplicar_comision_afiliacion_global', False)
@@ -358,11 +353,11 @@ if st.session_state.invoices_data:
     with col2:
         st.write("##### Tasas Globales")
         st.checkbox("Aplicar Tasa de Avance Global", key='aplicar_tasa_avance_global', on_change=handle_global_tasa_avance_change)
-        st.number_input("Tasa de Avance Global (%)", value=st.session_state.tasa_avance_global, key='tasa_avance_global', min_value=0.0, format="%.2f", disabled=not st.session_state.get('aplicar_tasa_avance_global', False), on_change=handle_global_tasa_avance_change)
+        st.number_input("Tasa de Avance Global (%)", key='tasa_avance_global', min_value=0.0, format="%.2f", disabled=not st.session_state.get('aplicar_tasa_avance_global', False), on_change=handle_global_tasa_avance_change)
         st.checkbox("Aplicar Interés Mensual Global", key='aplicar_interes_mensual_global', on_change=handle_global_interes_mensual_change)
-        st.number_input("Interés Mensual Global (%)", value=st.session_state.interes_mensual_global, key='interes_mensual_global', min_value=0.0, format="%.2f", disabled=not st.session_state.get('aplicar_interes_mensual_global', False), on_change=handle_global_interes_mensual_change)
+        st.number_input("Interés Mensual Global (%)", key='interes_mensual_global', min_value=0.0, format="%.2f", disabled=not st.session_state.get('aplicar_interes_mensual_global', False), on_change=handle_global_interes_mensual_change)
         st.checkbox("Aplicar Interés Moratorio Global", key='aplicar_interes_moratorio_global', on_change=handle_global_interes_moratorio_change)
-        st.number_input("Interés Moratorio Global (%)", value=st.session_state.interes_moratorio_global, key='interes_moratorio_global', min_value=0.0, format="%.2f", disabled=not st.session_state.get('aplicar_interes_moratorio_global', False), on_change=handle_global_interes_moratorio_change)
+        st.number_input("Interés Moratorio Global (%)", key='interes_moratorio_global', min_value=0.0, format="%.2f", disabled=not st.session_state.get('aplicar_interes_moratorio_global', False), on_change=handle_global_interes_moratorio_change)
 
     with col3:
         st.write("##### Fechas Globales")
@@ -372,7 +367,7 @@ if st.session_state.invoices_data:
         st.date_input("Fecha de Desembolso Global",key='fecha_desembolso_global',format="DD-MM-YYYY",disabled=not st.session_state.get('aplicar_fecha_desembolso_global', False),on_change=handle_global_disbursement_date_change)
         st.write("**Días Mínimos de Interés**")
         st.checkbox("Aplicar Días Mínimos", key='aplicar_dias_interes_minimo_global', on_change=handle_global_min_interest_days_change)
-        st.number_input("Valor Días Mínimos", value=st.session_state.dias_interes_minimo_global, key='dias_interes_minimo_global', min_value=0, step=1, on_change=handle_global_min_interest_days_change)
+        st.number_input("Valor Días Mínimos", key='dias_interes_minimo_global', min_value=0, step=1, on_change=handle_global_min_interest_days_change)
 
 
     # --- Cálculo Global ---
@@ -526,7 +521,6 @@ if st.session_state.invoices_data:
 
                 nueva_fecha_emision_obj = st.date_input(
                     "Fecha de Emisión",
-                    value=fecha_emision_obj,
                     key=f"fecha_emision_factura_{idx}",
                     format="DD-MM-YYYY",
                     disabled=is_disabled
@@ -566,7 +560,6 @@ if st.session_state.invoices_data:
                     "Plazo de Crédito (días)",
                     min_value=0,
                     step=1,
-                    value=display_value,
                     key=f"plazo_credito_dias_{idx}",
                     on_change=plazo_changed,
                     args=(idx,)
@@ -576,7 +569,6 @@ if st.session_state.invoices_data:
                 fecha_pago_obj = to_date_obj(invoice.get('fecha_pago_calculada'))
                 st.date_input(
                     "Fecha de Pago",
-                    value=fecha_pago_obj,
                     key=f"fecha_pago_calculada_{idx}",
                     format="DD-MM-YYYY",
                     on_change=fecha_pago_changed,
@@ -587,7 +579,6 @@ if st.session_state.invoices_data:
                 fecha_desembolso_obj = to_date_obj(invoice.get('fecha_desembolso_factoring'))
                 st.date_input(
                     "Fecha de Desembolso",
-                    value=fecha_desembolso_obj,
                     key=f"fecha_desembolso_factoring_{idx}",
                     format="DD-MM-YYYY",
                     on_change=fecha_desembolso_changed,
@@ -696,8 +687,8 @@ with col_paso3:
     st.write("#### Grabar Propuesta")
     st.write("##### 1. Ingresar Datos de Contrato")
 
-    st.session_state.anexo_number = st.text_input("Número de Anexo", value=st.session_state.anexo_number, key="anexo_number_global")
-    st.session_state.contract_number = st.text_input("Número de Contrato", value=st.session_state.contract_number, key="contract_number_global")
+    st.text_input("Número de Anexo", key="anexo_number_global")
+    st.text_input("Número de Contrato", key="contract_number_global")
 
     has_recalc_result = any(invoice.get('recalculate_result') for invoice in st.session_state.invoices_data)
     contract_fields_filled = bool(st.session_state.anexo_number) and bool(st.session_state.contract_number)
@@ -848,4 +839,3 @@ with col_paso3:
                 st.warning("No hay perfiles calculados para generar el Reporte EFIDE.")
         else:
             st.warning("No hay resultados de cálculo para generar el Reporte EFIDE.")
-
