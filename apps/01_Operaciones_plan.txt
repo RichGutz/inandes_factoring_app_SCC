@@ -1,0 +1,35 @@
+# LOG de Migración para 01_Operaciones.py
+# Status: COMPLETADO
+
+Este documento registra las acciones completadas para migrar `01_Operaciones.py` a la nueva arquitectura del proyecto.
+
+**Fase 1: Centralización de Lógica de PDF - COMPLETADA**
+
+1.  **`pdf_generators.py`:**
+    *   **Acción:** Se creó y actualizó el archivo `src/utils/pdf_generators.py`.
+    *   **Resultado:** El módulo ahora contiene funciones centralizadas para generar PDFs en memoria, eliminando la necesidad de scripts externos.
+
+2.  **Migración de Lógica de Reportes:**
+    *   **Acción:** Se analizó la lógica de `html_generator_for_perfil.py`, `efide_report_generator.py` y `html_generator_V6.py`.
+    *   **Resultado:** La lógica de cálculo y renderizado de estos scripts fue exitosamente integrada en las funciones correspondientes dentro de `pdf_generators.py`.
+
+3.  **Migración de Lógica de Base de Datos:**
+    *   **Acción:** Se identificó una consulta directa a la base de datos en `efide_report_generator.py`. Se creó una nueva función `get_signatory_data_by_ruc` en `src/data/supabase_repository.py`.
+    *   **Resultado:** Se eliminó el acceso a la base de datos desde la capa de utilidades, manteniendo la arquitectura limpia.
+
+**Fase 2: Actualización de `01_Operaciones.py` - COMPLETADA**
+
+1.  **Reemplazo de `subprocess`:**
+    *   **Acción:** Se eliminaron todas las llamadas a `subprocess` para la generación de PDFs.
+    *   **Resultado:** El script ahora importa `pdf_generators` y `supabase_repository` directamente.
+
+2.  **Integración de Botones de Descarga:**
+    *   **Acción:** Se añadieron los botones "Imprimir Perfiles de Operación", "Generar Reporte EFIDE" y "Generar PDF Consolidado de Liquidación" a la interfaz de usuario.
+    *   **Resultado:** Los botones llaman a las nuevas funciones, manejan la obtención de datos (incluyendo los datos del firmante) y utilizan `st.download_button` para ofrecer la descarga directa de los PDFs generados en memoria.
+
+**Fase 3: Preparación del Entorno de Pruebas - COMPLETADA**
+
+1.  **Creación de `static/`:** Se verificó la existencia de la carpeta `inandes_factoring_app/static/` para los archivos de logos.
+2.  **Creación de `requirements.txt`:** Se generó un archivo `requirements.txt` consolidado en la raíz del proyecto para facilitar la instalación de dependencias.
+
+**Conclusión:** El script `01_Operaciones.py` ha sido completamente refactorizado y está listo para las pruebas de usuario.

@@ -1,0 +1,6 @@
+streamlit
+streamlit_oauth
+supabase
+jinja2
+weasyprint
+requests

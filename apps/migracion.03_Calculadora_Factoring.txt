@@ -1,0 +1,25 @@
+Registro de Migración para 03_Calculadora_Factoring.py
+
+**Solicitud del Usuario:**
+Migrar 'calculadora_manual_app.py' a '03_Calculadora_Factoring.py', adaptándolo a la nueva arquitectura del proyecto.
+
+---
+**Análisis Preliminar (COMPLETADO):**
+1.  Se leyó 'calculadora_manual_app.py' para identificar dependencias.
+2.  Se confirmó la necesidad de corregir importaciones y rutas de archivos estáticos y de generación de PDFs.
+
+---
+**Plan de Ejecución (COMPLETADO):**
+
+1.  **Análisis Detallado:** Se analizó el script original.
+2.  **Modificación en Memoria:**
+    *   Se reemplazó el sistema de importación local por el nuevo método estándar (añadir `project_root` a `sys.path`).
+    *   Se añadieron las importaciones necesarias (`sys`, `pdf_generators`) y se eliminó `subprocess`.
+    *   Se corrigieron las rutas de las imágenes para usar `os.path.join` con la variable `project_root` y apuntar al directorio `static`.
+    *   Se eliminó la carga de un archivo `style.css` externo.
+    *   Se refactorizó la generación de PDF, reemplazando la llamada a `subprocess` por una llamada interna a `pdf_generators.generate_perfil_operacion_pdf` y usando `st.download_button`.
+3.  **Creación de Nuevo Script:** Se escribió el contenido modificado directamente en el nuevo archivo `03_Calculadora_Factoring.py`.
+4.  **Finalización:** El script `03_Calculadora_Factoring.py` está listo para ser probado por el usuario.
+
+---
+**Estado:** COMPLETADO

@@ -1,0 +1,92 @@
+# Mapeo de Rutas para Migración de 01_Operaciones.py
+
+Este archivo detalla los cambios necesarios para migrar `frontend_app_V.CLI.py` a la nueva arquitectura.
+
+## 1. Módulos Internos (Importaciones)
+
+# ANTIGUO:
+# import pdf_parser
+# import supabase_handler
+# import subprocess
+
+# NUEVO:
+# import tempfile
+# import sys
+# # --- Path Setup ---
+# project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+# if project_root not in sys.path:
+#     sys.path.insert(0, project_root)
+# # --- Module Imports from `src` ---
+# from src.services import pdf_parser
+# from src.data import supabase_repository as db
+# from src.utils import pdf_generators
+
+---
+
+## 2. Archivos Estáticos (CSS y Logos)
+
+# ANTIGUO:
+# st.image("C:/Users/rguti/Inandes.TECH/inputs_para_generated_pdfs/logo.geek.png", ...)
+# st.image("C:/Users/rguti/Inandes.TECH/inputs_para_generated_pdfs/LOGO.png", ...)
+# with open("C:/Users/rguti/Inandes.TECH/.streamlit/style.css") as f:
+
+# NUEVO (usando la variable `project_root` definida en el Path Setup):
+# st.image(os.path.join(project_root, "static", "logo_geek.png"), ...)
+# st.image(os.path.join(project_root, "static", "logo_inandes.png"), ...)
+# La línea del style.css se elimina. La configuración de estilo se hará en .streamlit/config.toml.
+
+---
+
+## 3. Archivos Temporales
+
+# ANTIGUO (escritura manual en una ruta absoluta):
+# temp_file_path = os.path.join("C:/Users/rguti/Inandes.TECH/backend", f"temp_uploaded_pdf_{uploaded_file.file_id}.pdf")
+# with open(temp_file_path, "wb") as f:
+#     f.write(uploaded_file.getbuffer())
+
+# NUEVO (uso de librería `tempfile`):
+# with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+#     tmp.write(uploaded_file.getvalue())
+#     temp_file_path = tmp.name
+
+---
+
+## 4. Llamadas a Scripts Externos (subprocess)
+
+# ANTIGUO:
+# command = ["python", "C:/Users/rguti/Inandes.TECH/backend/html_generator_for_perfil.py", ...]
+# command = ["python", "C:/Users/rguti/Inandes.TECH/backend/efide_report_generator.py", ...]
+# command = ["python", "C:/Users/rguti/Adicionales.Inandes.HTML/html_generator_V6.py", ...]
+
+# NUEVO (llamadas a funciones del módulo `pdf_generators`):
+# pdf_bytes = pdf_generators.generate_perfil_operacion_pdf(...)
+# pdf_bytes = pdf_generators.generate_efide_report_pdf(...)
+# pdf_bytes = pdf_generators.generate_liquidacion_consolidada_pdf(...)
+# Y se usa st.download_button con los bytes resultantes.
+
+---
+
+## 5. Llamadas a Base de Datos
+
+# ANTIGUO:
+# supabase_handler.get_razon_social_by_ruc(...)
+# supabase_handler.save_proposal(...)
+# supabase_handler.get_proposal_details_by_id(...)
+# supabase_handler.get_active_proposals_by_emisor_nombre(...)
+
+# NUEVO (usando el alias `db`):
+# db.get_razon_social_by_ruc(...)
+# db.save_proposal(...)
+# db.get_proposal_details_by_id(...)
+# Nota: La búsqueda por nombre de emisor se simplificará a búsqueda por ID en la primera versión migrada.
+
+---
+## Plan de Refactorización (Generado por Gemini)
+
+Este es el plan de 5 etapas para refactorizar `01_Operaciones.py`.
+
+1.  **Reestructurar Importaciones:** Cambiar las importaciones actuales (`import pdf_parser`, `import supabase_handler`) para que apunten a la nueva carpeta `src`, estableciendo una ruta de proyecto relativa.
+2.  **Centralizar Archivos Estáticos:** Las rutas absolutas de las imágenes (`C:/Users/rguti/Inandes.TECH/...`) serán reemplazadas por rutas relativas que apunten a una nueva carpeta `static`.
+3.  **Mejorar Manejo de Temporales:** Reemplazar la creación manual de archivos temporales con el uso de la librería `tempfile` de Python, que es más segura.
+4.  **Internalizar Scripts:** Las llamadas a scripts externos usando `subprocess` serán eliminadas y sustituidas por llamadas a funciones directas del nuevo módulo `utils.pdf_generators`.
+5.  **Abstraer Acceso a Datos:** Las llamadas a `supabase_handler` se cambiarán para usar un alias `db`, que apuntará al nuevo módulo de acceso a datos.
