@@ -137,6 +137,7 @@ else:
 
     # --- NAVIGATION ---
     def switch_page(page_name):
+        # Streamlit finds pages in the 'pages' directory automatically.
         st.switch_page(f"{page_name}.py")
 
     # --- DATA & ORDER ---
