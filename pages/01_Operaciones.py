@@ -17,7 +17,7 @@ from src.data import supabase_repository as db
 from src.utils import pdf_generators
 
 # --- Configuración Inicial ---
-API_BASE_URL = st.secrets["backend_api"]["url"] # Updated to read from Streamlit secrets
+API_BASE_URL = st.secrets["backend_api"]["url"] # Updated to read from Streamlit secrets (forced deploy)
 
 st.set_page_config(
     layout="wide",
