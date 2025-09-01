@@ -219,7 +219,7 @@ if 'aplicar_interes_moratorio_global' not in st.session_state: st.session_state.
 if 'interes_moratorio_global' not in st.session_state: st.session_state.interes_moratorio_global = st.session_state.default_interes_moratorio
 
 # --- UI: Título y CSS ---
-st.markdown("<style>\n[data-testid=\"stHorizontalBlock\"] { \n    align-items: center; \n}\n</style>", unsafe_allow_html=True)
+st.markdown("<style>\n[data-testid=\"stHorizontalBlock\"] { \n    align-items: flex-start; \n}\n</style>", unsafe_allow_html=True)
 
 col1, col2, col3 = st.columns([0.25, 0.5, 0.25])
 with col1:
@@ -427,7 +427,7 @@ if st.session_state.invoices_data:
 
             try:
                 with st.spinner("Calculando desembolso inicial para todas las facturas..."):
-                                        response = requests.post(f"{API_BASE_URL}/desembolsar_lote", json=lote_desembolso_payload) # Endpoint corrected (forced deploy again)
+                    response = requests.post(f"{API_BASE_URL}/calcular_desembolso_lote", json=lote_desembolso_payload)
                     response.raise_for_status()
                     initial_calc_results_lote = response.json()
 

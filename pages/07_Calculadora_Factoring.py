@@ -16,7 +16,7 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 from src.utils import pdf_generators
 
 # --- Configuración Inicial ---
-API_BASE_URL = "http://127.0.0.1:8000"
+API_BASE_URL = st.secrets["backend_api"]["url"]
 
 st.set_page_config(
     layout="wide",
