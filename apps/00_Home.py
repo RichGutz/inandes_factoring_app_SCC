@@ -135,7 +135,7 @@ else:
 
     # --- NAVIGATION ---
     def switch_page(page_name):
-        st.switch_page(f"apps/{page_name}.py")
+        st.switch_page(f"{page_name}.py")
 
     # --- DATA & ORDER ---
     MODULES = {
