@@ -8,6 +8,24 @@ if src_path not in sys.path:
     sys.path.append(src_path)
 
 import streamlit as st
+
+# --- DEBUGGING SECRETS ---
+st.write("--- Debugging Secrets ---")
+if "supabase" in st.secrets:
+    st.write("✅ [supabase] section exists.")
+    if "url" in st.secrets.supabase:
+        st.write("✅ supabase.url exists.")
+    else:
+        st.write("❌ supabase.url NOT FOUND.")
+    if "key" in st.secrets.supabase:
+        st.write("✅ supabase.key exists.")
+    else:
+        st.write("❌ supabase.key NOT FOUND.")
+else:
+    st.write("❌ [supabase] section NOT FOUND.")
+st.write("--- End Debugging ---")
+# --- END DEBUGGING ---
+
 from streamlit_mermaid import st_mermaid
 from streamlit_oauth import OAuth2Component
 import base64
@@ -210,8 +228,7 @@ else:
     st.markdown("&nbsp;")
     st.subheader("Hoja de Ruta Visual (Work in Progress)", divider='blue')
 
-    mermaid_code = """
-    graph TD
+    mermaid_code = """graph TD
         A["Start Operacion de Factoring Aprobada"] --> B{Es una operacion nueva};
 
         B --o|Si| SW_MODULO_CLIENTES["SW Modulo Clientes"];
