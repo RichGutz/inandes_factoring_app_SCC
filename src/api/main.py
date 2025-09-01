@@ -67,7 +67,7 @@ async def calcular_desembolso_lote_endpoint(payload: List[Dict[str, Any]]):
     """
     try:
         result = procesar_lote_desembolso_inicial(payload)
-        return {"resultados_por_factura": result}
+        return result
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -78,7 +78,7 @@ async def encontrar_tasa_lote_endpoint(payload: List[Dict[str, Any]]):
     """
     try:
         result = procesar_lote_encontrar_tasa(payload)
-        return {"resultados_por_factura": result}
+        return result
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
