@@ -427,7 +427,7 @@ if st.session_state.invoices_data:
 
             try:
                 with st.spinner("Calculando desembolso inicial para todas las facturas..."):
-                    response = requests.post(f"{API_BASE_URL}/desembolsar_lote", json=lote_desembolso_payload)
+                                        response = requests.post(f"{API_BASE_URL}/desembolsar_lote", json=lote_desembolso_payload)
                     response.raise_for_status()
                     initial_calc_results_lote = response.json()
 
