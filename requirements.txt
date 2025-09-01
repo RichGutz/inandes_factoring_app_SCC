@@ -4,3 +4,4 @@ supabase
 jinja2
 weasyprint
 requests
+ streamlit_mermaid
