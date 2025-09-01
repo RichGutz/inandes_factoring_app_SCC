@@ -5,4 +5,4 @@ jinja2
 weasyprint
 requests
 streamlit_mermaid
-# Forzar redespliegue para actualizar cache
+# Forzar-Reconstruccion-Completa-V20250901
