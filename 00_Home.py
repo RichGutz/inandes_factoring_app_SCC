@@ -1,9 +1,11 @@
 import sys
 import os
 # --- PATH SETUP ---
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+# Add the 'src' directory to the Python path to recognize modules
+project_root = os.path.dirname(__file__)
+src_path = os.path.join(project_root, 'src')
+if src_path not in sys.path:
+    sys.path.append(src_path)
 
 import streamlit as st
 from streamlit_mermaid import st_mermaid

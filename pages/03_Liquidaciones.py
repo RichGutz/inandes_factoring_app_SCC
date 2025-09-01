@@ -1,11 +1,9 @@
 # liquidacion_por_lotes_app.py
 
 # --- Path Setup ---
-import sys
-import os
+# The main script (00_Home.py) handles adding 'src' to the path.
+# This page only needs to know the project root for static assets.
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
 
 import streamlit as st
 import datetime

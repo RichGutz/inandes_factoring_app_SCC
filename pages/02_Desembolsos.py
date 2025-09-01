@@ -8,9 +8,9 @@ import requests
 import json
 
 # --- Path Setup ---
+# The main script (00_Home.py) handles adding 'src' to the path.
+# This page only needs to know the project root for static assets.
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
 
 # --- Module Imports from `src` ---
 from src.data import supabase_repository as db
