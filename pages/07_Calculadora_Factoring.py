@@ -182,7 +182,7 @@ if 'aplicar_interes_mensual_global' not in st.session_state: st.session_state.ap
 if 'interes_mensual_global' not in st.session_state: st.session_state.interes_mensual_global = st.session_state.default_interes_mensual
 
 # --- UI: Título y CSS ---
-st.markdown("<style>\n[data-testid=\"stHorizontalBlock\"] { \n    align-items: center; \n}\n</style>", unsafe_allow_html=True)
+st.markdown("<style>\n[data-testid=\"stHorizontalBlock\"] { \n    align-items: flex-start; \n}\n</style>", unsafe_allow_html=True)
 
 col1, col2, col3 = st.columns([0.25, 0.5, 0.25])
 with col1:
