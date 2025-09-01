@@ -210,13 +210,11 @@ else:
                 
                 st.markdown("&nbsp;") # Spacer for vertical alignment
                 
+                # --- NEW BUTTON LOGIC ---
                 if details["page"]:
-                    st.button(f"Ir a {module_name}", 
-                              on_click=switch_page, 
-                              args=[details['page']], 
-                              help=details["help"],
-                              key=f"btn_{module_name}",
-                              use_container_width=True)
+                    # Use a standard 'if' block to handle navigation instead of on_click
+                    if st.button(f"Ir a {module_name}", help=details["help"], key=f"btn_{module_name}", use_container_width=True):
+                        switch_page(details['page'])
                 else:
                     st.button("Próximamente", 
                               disabled=True, 
