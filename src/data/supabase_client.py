@@ -1,28 +1,48 @@
 # src/data/supabase_client.py
 
 import os
-import streamlit as st
 from supabase import create_client, Client
 from typing import Optional
 
-# --- Singleton instance --- 
+# --- Singleton instance ---
 _supabase_client_instance: Optional[Client] = None
 
 def get_supabase_client() -> Client:
     """
-    Initializes and returns a singleton Supabase client instance
-    using credentials from Streamlit's secrets management.
+    Initializes and returns a singleton Supabase client instance.
+    It attempts to load credentials from Streamlit's secrets (for frontend)
+    or from environment variables (for backend/non-Streamlit environments).
     """
     global _supabase_client_instance
     if _supabase_client_instance is None:
-        # Check if Supabase credentials are in st.secrets
-        if "supabase" not in st.secrets or "url" not in st.secrets.supabase or "key" not in st.secrets.supabase:
-            raise ValueError("Supabase credentials not found in Streamlit Secrets. Please add a [supabase] section with 'url' and 'key' to your secrets.")
+        SUPABASE_URL = None
+        SUPABASE_KEY = None
 
-        SUPABASE_URL = st.secrets.supabase.url
-        SUPABASE_KEY = st.secrets.supabase.key
+        # Try to load from Streamlit secrets first (for frontend)
+        try:
+            import streamlit as st
+            if "supabase" in st.secrets and "url" in st.secrets.supabase and "key" in st.secrets.supabase:
+                SUPABASE_URL = st.secrets.supabase.url
+                SUPABASE_KEY = st.secrets.supabase.key
+                print("Supabase credentials loaded from Streamlit secrets.")
+        except Exception:
+            # Streamlit not available or secrets not configured, fall back to environment variables
+            pass
 
-        print("Initializing Supabase client from st.secrets...")
+        # If not loaded from Streamlit secrets, try environment variables (for backend)
+        if SUPABASE_URL is None or SUPABASE_KEY is None:
+            SUPABASE_URL = os.environ.get("SUPABASE_URL")
+            SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+            print("Supabase credentials loaded from environment variables.")
+
+        if not SUPABASE_URL or not SUPABASE_KEY:
+            raise ValueError(
+                "Supabase credentials (SUPABASE_URL and SUPABASE_KEY) not found. "
+                "Please ensure they are set in Streamlit Secrets (for frontend) "
+                "or as environment variables (for backend)."
+            )
+
+        print("Initializing Supabase client...")
         _supabase_client_instance = create_client(SUPABASE_URL, SUPABASE_KEY)
         print("Supabase client initialized.")
 
