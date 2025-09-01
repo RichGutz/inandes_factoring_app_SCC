@@ -170,10 +170,10 @@ if 'aplicar_dias_interes_minimo_global' not in st.session_state: st.session_stat
 if 'dias_interes_minimo_global' not in st.session_state: st.session_state.dias_interes_minimo_global = 15
 
 # Default values for new invoices (these will be copied into each invoice's dict)
-if 'default_comision_afiliacion_pen' not in st.session_state: st.session_state.default_comision_afiliacion_pen = 200.0
-if 'default_comision_afiliacion_usd' not in st.session_state: st.session_state.default_comision_afiliacion_usd = 50.0
-if 'default_tasa_de_avance' not in st.session_state: st.session_state.default_tasa_de_avance = 98.0
-if 'default_interes_mensual' not in st.session_state: st.session_state.default_interes_mensual = 1.25
+if 'default_comision_afiliacion_pen' not in st.session_state: st.session_state.default_comision_afiliacion_pen = 0.0
+if 'default_comision_afiliacion_usd' not in st.session_state: st.session_state.default_comision_afiliacion_usd = 0.0
+if 'default_tasa_de_avance' not in st.session_state: st.session_state.default_tasa_de_avance = 0.0
+if 'default_interes_mensual' not in st.session_state: st.session_state.default_interes_mensual = 0.0
 
 # Global settings for rates
 if 'aplicar_tasa_avance_global' not in st.session_state: st.session_state.aplicar_tasa_avance_global = False
@@ -221,19 +221,19 @@ with st.expander("Configuración de Simulación", expanded=True):
                     'monto_neto_factura': 0.0,
                     'moneda_factura': 'PEN',
                     'fecha_emision_factura': '',
-                    'plazo_credito_dias': None,
-                    'fecha_desembolso_factoring': datetime.date.today().strftime("%d-%m-%Y"),
-                    'tasa_de_avance': st.session_state.default_tasa_de_avance,
-                    'interes_mensual': st.session_state.default_interes_mensual,
-                    'comision_afiliacion_pen': st.session_state.default_comision_afiliacion_pen,
-                    'comision_afiliacion_usd': st.session_state.default_comision_afiliacion_usd,
+                    'plazo_credito_dias': 0,
+                    'fecha_desembolso_factoring': '',
+                    'tasa_de_avance': 0.0,
+                    'interes_mensual': 0.0,
+                    'comision_afiliacion_pen': 0.0,
+                    'comision_afiliacion_usd': 0.0,
                     'aplicar_comision_afiliacion': False,
                     'detraccion_porcentaje': 0.0,
                     'fecha_pago_calculada': '',
                     'plazo_operacion_calculado': 0,
                     'initial_calc_result': None,
                     'recalculate_result': None,
-                    'dias_minimos_interes_individual': 15,
+                    'dias_minimos_interes_individual': 0,
                 })
         st.session_state.invoices_data = new_invoices_data
 
