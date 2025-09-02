@@ -145,11 +145,11 @@ else:
 
     # --- DATA & ORDER ---
     MODULES = {
-        "Clientes": {"status": "📝 Planeado", "help": "Manejo de nuevos clientes, incluyendo la creación de perfiles, generación de contratos y gestión de firmas electrónicas.", "page": None},
-        "Operaciones": {"status": "✅ En Producción", "help": "Gestión de operaciones para clientes existentes. Permite crear anexos, procesar facturas y generar los perfiles de la operación.", "page": "01_Operaciones"},
+        "Registro": {"status": "📝 Planeado", "help": "Manejo de nuevos clientes, incluyendo la creación de perfiles, generación de contratos y gestión de firmas electrónicas.", "page": None},
+        "Originación": {"status": "✅ En Producción", "help": "Gestión de operaciones para clientes existentes. Permite crear anexos, procesar facturas y generar los perfiles de la operación.", "page": "01_Operaciones"},
         "Desembolso": {"status": "✅ En Producción", "help": "Automatiza la solicitud de Letras Electrónicas, contrasta datos y gestiona la aprobación del desembolso.", "page": "02_Desembolsos"},
         "Liquidación": {"status": "✅ En Producción", "help": "Procesa los pagos recibidos, determina si fueron a tiempo, anticipados o tardíos, y calcula los ajustes finales.", "page": "03_Liquidaciones"},
-        "Reportes": {"status": "📝 Planeado", "help": "Generación de reportes gerenciales (volumen, mora, etc.) y tributarios para el análisis y control del negocio.", "page": None},
+        "Reporte": {"status": "📝 Planeado", "help": "Generación de reportes gerenciales (volumen, mora, etc.) y tributarios para el análisis y control del negocio.", "page": None},
         "Calculadora Factoring": {"status": "✅ En Producción", "help": "Permite realizar simulaciones y cálculos manuales de operaciones de factoring.", "page": "07_Calculadora_Factoring"}
     }
 
