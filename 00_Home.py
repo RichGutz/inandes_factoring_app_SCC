@@ -153,7 +153,7 @@ else:
         "Calculadora Factoring": {"status": "✅ En Producción", "help": "Permite realizar simulaciones y cálculos manuales de operaciones de factoring.", "page": "07_Calculadora_Factoring"}
     }
 
-    DISPLAY_ORDER = ["Clientes", "Operaciones", "Desembolso", "Liquidación", "Reportes", "Calculadora Factoring"]
+    DISPLAY_ORDER = ["Registro", "Originación", "Desembolso", "Liquidación", "Reporte", "Calculadora Factoring"]
 
     # --- STYLING ---
     st.markdown("""<style>
