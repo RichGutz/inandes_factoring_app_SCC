@@ -140,8 +140,8 @@ else:
 
     # --- NAVIGATION ---
     def switch_page(page_name):
-        # For manual switching, we must provide the full path from the root.
-        st.switch_page(f"pages/{page_name}.py")
+        # Streamlit automatically handles pages in the 'pages/' directory.
+        st.switch_page(page_name)
 
     # --- DATA & ORDER ---
     MODULES = {
