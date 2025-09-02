@@ -691,13 +691,13 @@ with col_paso3:
     st.text_input("Número de Contrato", key="contract_number_global")
 
     has_recalc_result = any(invoice.get('recalculate_result') for invoice in st.session_state.invoices_data)
-    contract_fields_filled = bool(st.session_state.anexo_number) and bool(st.session_state.contract_number)
+    contract_fields_filled = bool(st.session_state.anexo_number_global) and bool(st.session_state.contract_number_global)
     can_save_proposal = has_recalc_result and contract_fields_filled
 
     if st.button("GRABAR Propuesta en Base de Datos", disabled=not can_save_proposal):
         if can_save_proposal:
-            anexo_number_str = st.session_state.anexo_number
-            contract_number_str = st.session_state.contract_number
+            anexo_number_str = st.session_state.anexo_number_global
+            contract_number_str = st.session_state.contract_number_global
             timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
             identificador_lote = f"LOTE-{contract_number_str}-{anexo_number_str}-{timestamp}"
 
