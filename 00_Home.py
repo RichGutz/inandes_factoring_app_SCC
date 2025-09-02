@@ -251,17 +251,21 @@ else:
         SW_FACTURACION --> SW_MODULO_LIQUIDACION["Módulo Liquidación"];
         SW_MODULO_LIQUIDACION --> SW_RECEPCION_PAGO["Recibir evidencia de pago voucher"];
         SW_RECEPCION_PAGO --> SW_COMPARAR_FECHAS["Comparar Fecha de Pago Real vs. Fecha Esperada"];
-        SW_COMPARAR_FECHAS --> TIPO_PAGO{Tipo de Pago};
-        
-        TIPO_PAGO --o|Anticipado| SW_PAGO_ANTICIPADO["SW Calcula intereses en exceso"];
+        SW_COMPARAR_FECHAS --> TIPO_PAGO{Completo o Parcial};
+
+        TIPO_PAGO --o|Completo| TIPO_PAGO_COMPLETO{Tipo de Pago Completo};
+        TIPO_PAGO_COMPLETO --o|Anticipado| SW_PAGO_ANTICIPADO["SW Calcula intereses en exceso"];
         SW_PAGO_ANTICIPADO --> SW_GEN_NC["SW Registra necesidad de Nota de Credito Neteo"];
         SW_GEN_NC --> CIERRE_FINAL;
-
-        TIPO_PAGO --o|A Tiempo| CIERRE_FINAL;
-
-        TIPO_PAGO --o|Tardio| SW_PAGO_TARDIO["SW Calcula Intereses Compensatorios y Moratorios opcional"];
+        TIPO_PAGO_COMPLETO --o|A Tiempo| CIERRE_FINAL;
+        TIPO_PAGO_COMPLETO --o|Tardio| SW_PAGO_TARDIO["SW Calcula Intereses Compensatorios y Moratorios opcional"];
         SW_PAGO_TARDIO --> SW_GEN_FACTURA["SW Registra necesidad de Nueva Factura por intereses"];
         SW_GEN_FACTURA --> CIERRE_FINAL;
+
+        TIPO_PAGO --o|Parcial| TIPO_PAGO_PARCIAL{Tipo de Pago Parcial};
+        TIPO_PAGO_PARCIAL --o|A Tiempo| EN_PROCESO_LIQUIDACION["EN PROCESO DE LIQUIDACION"];
+        TIPO_PAGO_PARCIAL --o|Tardio| EN_PROCESO_LIQUIDACION;
+        EN_PROCESO_LIQUIDACION --> SW_RECEPCION_PAGO;
 
         CIERRE_FINAL["Marcar Operacion como LIQUIDADA"] --> MODULO_REPORTE["Módulo Reporte"];
         MODULO_REPORTE --> REPORTES_GERENCIALES["Reportes Gerenciales"];
@@ -292,7 +296,7 @@ else:
         classDef standby fill:#f9f,stroke:#333,stroke-width:2px
         classDef module fill:#ff0000,stroke:#333,stroke-width:2px
 
-        class N_STANDBY,R_STANDBY,H_STANDBY standby
+        class N_STANDBY,R_STANDBY,H_STANDBY,EN_PROCESO_LIQUIDACION standby
         class SW_MODULO_CLIENTES,SW_MODULO_OPERACIONES,SW_MODULO_DESEMBOLSO,SW_MODULO_LIQUIDACION,MODULO_REPORTE,REPORTES_GERENCIALES,REPORTES_TRIBUTARIOS,SW_CALCULADORA_FACTORING module
     """
     st_mermaid(mermaid_code, height="800px")
