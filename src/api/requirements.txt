@@ -1,4 +1,4 @@
-fastapi
+tir las reposabildiades, en resumen defastapi
 uvicorn[standard]
 python-dotenv
 requests
