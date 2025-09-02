@@ -214,7 +214,7 @@ else:
     mermaid_code = """graph TD
         A["Start Operacion de Factoring Aprobada"] --> B{Es una operacion nueva};
 
-        B --o|Si| SW_MODULO_CLIENTES["Registro"];
+        B --o|Si| SW_MODULO_CLIENTES["Módulo Registro"];
         SW_MODULO_CLIENTES --> SW_PASO_1["Crear perfil de cliente RUC, firmas, contactos, etc"];
         SW_PASO_1 --> SW_PASO_2["Crear Repositorio Google Drive Razon Social con subcarpetas Legal y Riesgos"];
         SW_PASO_2 --> SW_GEN_DOCS["SW Con datos del cliente y plantillas, se generan Contrato, Pagare y Acuerdos"];
@@ -222,7 +222,7 @@ else:
         SW_SEND_KEYNUA --> SW_KEYNUA_CONFIRM["SW Confirmacion de firma recibida via API"];
         SW_KEYNUA_CONFIRM --> K;
 
-        B --o|No| SW_MODULO_OPERACIONES["Originación"];
+        B --o|No| SW_MODULO_OPERACIONES["Módulo Originación"];
         SW_MODULO_OPERACIONES --> SW_CREAR_ANEXO["Crear Anexo de Contrato y su carpeta en G.Drive"];
         SW_CREAR_ANEXO --> K;
 
@@ -239,7 +239,7 @@ else:
         Q --o|No| R_STANDBY["Operacion en Stand-By e Insistir por correo para conformidad"];
         R_STANDBY --> Q;
 
-        Q --o|Si| SW_MODULO_DESEMBOLSO["Desembolso"];
+        Q --o|Si| SW_MODULO_DESEMBOLSO["Módulo Desembolso"];
         SW_MODULO_DESEMBOLSO --> SW_GET_CAVALI["Solicita y recibe Letra Electronica de Cavali"];
         SW_GET_CAVALI --> SW_CONTRASTE["Contrasta datos Cavali vs. Proforma de Supabase"];
         SW_CONTRASTE --> VERIFICACION{Datos coinciden?};
@@ -248,7 +248,7 @@ else:
         SW_APROBACION --> T["Desembolsar"];
         T --> SW_FACTURACION["Genera datos/formato para Modulo de Facturacion Electronica"];
 
-        SW_FACTURACION --> SW_MODULO_LIQUIDACION["Liquidación"];
+        SW_FACTURACION --> SW_MODULO_LIQUIDACION["Módulo Liquidación"];
         SW_MODULO_LIQUIDACION --> SW_RECEPCION_PAGO["Recibir evidencia de pago voucher"];
         SW_RECEPCION_PAGO --> SW_COMPARAR_FECHAS["Comparar Fecha de Pago Real vs. Fecha Esperada"];
         SW_COMPARAR_FECHAS --> TIPO_PAGO{Tipo de Pago};
@@ -263,7 +263,7 @@ else:
         SW_PAGO_TARDIO --> SW_GEN_FACTURA["SW Registra necesidad de Nueva Factura por intereses"];
         SW_GEN_FACTURA --> CIERRE_FINAL;
 
-        CIERRE_FINAL["Marcar Operacion como LIQUIDADA"] --> MODULO_REPORTE["Reporte"];
+        CIERRE_FINAL["Marcar Operacion como LIQUIDADA"] --> MODULO_REPORTE["Módulo Reporte"];
         MODULO_REPORTE --> REPORTES_GERENCIALES["Reportes Gerenciales"];
         MODULO_REPORTE --> REPORTES_TRIBUTARIOS["Reportes Tributarios"];
 
@@ -287,7 +287,7 @@ else:
         REPORTE_DESEMBOLSOS --> Z;
         Z["End Proceso Finalizado"];
 
-        SW_CALCULADORA_FACTORING["Calculadora Factoring"];
+        SW_CALCULADORA_FACTORING["Módulo Calculadora Factoring"];
 
         classDef standby fill:#f9f,stroke:#333,stroke-width:2px
         classDef module fill:#ff0000,stroke:#333,stroke-width:2px
