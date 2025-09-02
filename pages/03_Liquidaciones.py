@@ -1,4 +1,5 @@
 # liquidacion_por_lotes_app.py
+import os
 
 # --- Path Setup ---
 # The main script (00_Home.py) handles adding 'src' to the path.
