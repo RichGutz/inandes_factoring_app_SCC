@@ -1,0 +1,29 @@
+   
+1. Start the Backend API:
+      cd C:\Users\rguti\inandes_factoring_app directory and run the following
+ 
+command. This server must be kept running in the background for the frontend to work.
+   
+
+1     uvicorn src.api.main:app --reload &
+      You should see a message indicating that the server is running (e.g., Uvicorn running on
+  http://127.0.0.1:8000).
+
+  
+
+
+Run the Frontend Application:
+ 
+Open a separate terminal in the 
+
+ directory and run this command:
+      
+
+streamlit run C:\Users\rguti\inandes_factoring_app\apps\00_Home.py
+
+streamlit run C:\Users\rguti\inandes_factoring_app\apps\01_Operaciones.py
+
+streamlit run C:\Users\rguti\inandes_factoring_app\apps\02_Liquidaciones.py
+
+streamlit run C:\Users\rguti\inandes_factoring_app\apps\03_Calculadora_Factoring.py
+      .

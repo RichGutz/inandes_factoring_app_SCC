@@ -1,0 +1,156 @@
+### **SEUDOCÓDIGO GENERAL**
+
+```
+INICIO PROGRAMA
+
+    // =================================================================================
+    // FUNCIÓN 1: Calcular Desembolso Inicial (cuando la tasa de avance es conocida)
+    // =================================================================================
+    FUNCIÓN calcular_desembolso_inicial(plazo, monto_factura, tasa_avance, interes_mensual, comision_pct, comision_minima, igv_pct, comision_afiliacion_monto, aplicar_afiliacion)
+        INICIO FUNCIÓN
+
+        SI plazo < 0 ENTONCES
+            RETORNAR ERROR "El plazo no puede ser negativo"
+        FIN SI
+
+        // Cálculos básicos
+        capital = monto_factura * tasa_avance
+        tasa_diaria = interes_mensual / 30
+        interes = capital * ( (1 + tasa_diaria) ^ plazo - 1 )
+        igv_interes = interes * igv_pct
+
+        // Cálculo de la comisión de estructuración
+        comision_estructuracion_calculada = capital * comision_pct
+        comision_estructuracion_final = MÁXIMO(comision_estructuracion_calculada, comision_minima)
+        igv_comision = comision_estructuracion_final * igv_pct
+
+        // Cálculo del abono teórico inicial
+        abono_teorico = capital - interes - igv_interes - comision_estructuracion_final - igv_comision
+
+        // Aplicar comisión de afiliación si corresponde
+        comision_afiliacion_final = 0
+        igv_afiliacion = 0
+        SI aplicar_afiliacion ES VERDADERO ENTONCES
+            comision_afiliacion_final = comision_afiliacion_monto
+            igv_afiliacion = comision_afiliacion_final * igv_pct
+            abono_teorico = abono_teorico - (comision_afiliacion_final + igv_afiliacion)
+        FIN SI
+
+        // Cálculo de valores finales
+        monto_a_desembolsar = REDONDEAR_HACIA_ABAJO(abono_teorico)
+        margen_seguridad = monto_factura - capital
+
+        // Retornar todos los resultados
+        RETORNAR { capital, interes, igv_interes, comision_estructuracion_final, igv_comision, comision_afiliacion_final, igv_afiliacion, abono_teorico, monto_a_desembolsar, margen_seguridad, plazo }
+
+        FIN FUNCIÓN
+
+    // =================================================================================
+    // FUNCIÓN 2: Encontrar Tasa de Avance (para un monto objetivo de desembolso)
+    // =================================================================================
+    FUNCIÓN encontrar_tasa_de_avance(plazo, monto_factura, interes_mensual, comision_pct, igv_pct, monto_objetivo, comision_minima, comision_afiliacion_monto, aplicar_afiliacion)
+        INICIO FUNCIÓN
+
+        SI monto_factura == 0 ENTONCES
+            RETORNAR ERROR "El monto de la factura no puede ser cero"
+        FIN SI
+
+        // --- LÓGICA CENTRAL: CALCULAR EL CAPITAL NECESARIO ---
+        // Se hacen dos cálculos paralelos para el capital y se elige el mayor.
+        // Esto es para resolver la dependencia circular donde la comisión puede ser un porcentaje del capital o un mínimo fijo.
+
+        // Costos iniciales
+        tasa_diaria = interes_mensual / 30
+        factor_interes = ( (1 + tasa_diaria) ^ plazo - 1 )
+        costo_fijo_afiliacion = 0
+        SI aplicar_afiliacion ES VERDADERO ENTONCES
+            costo_fijo_afiliacion = comision_afiliacion_monto * (1 + igv_pct)
+        FIN SI
+
+        // CÁLCULO A: Asumiendo que la comisión será el PORCENTAJE del capital.
+        costo_variable_A = (factor_interes + comision_pct) * (1 + igv_pct)
+        capital_A = 0
+        SI (1 - costo_variable_A) > 0 ENTONCES
+            capital_A = (monto_objetivo + costo_fijo_afiliacion) / (1 - costo_variable_A)
+        FIN SI
+
+        // CÁLCULO B: Asumiendo que la comisión será el MÍNIMO FIJO.
+        costo_variable_B = factor_interes * (1 + igv_pct)
+        costo_fijo_estructuracion = comision_minima * (1 + igv_pct)
+        costos_fijos_totales_B = costo_fijo_estructuracion + costo_fijo_afiliacion
+        capital_B = 0
+        SI (1 - costo_variable_B) > 0 ENTONCES
+            capital_B = (monto_objetivo + costos_fijos_totales_B) / (1 - costo_variable_B)
+        FIN SI
+
+        // El capital necesario es el MÁXIMO de los dos escenarios.
+        capital_necesario = MÁXIMO(capital_A, capital_B)
+
+        // --- RE-CÁLCULO FINAL CON EL CAPITAL YA DEFINIDO ---
+        // Usamos el capital_necesario para calcular todos los componentes del costo de forma definitiva.
+        capital = capital_necesario
+        interes = capital * factor_interes
+        igv_interes = interes * igv_pct
+        comision_estructuracion = MÁXIMO(capital * comision_pct, comision_minima)
+        igv_comision = comision_estructuracion * igv_pct
+
+        comision_afiliacion = 0
+        igv_afiliacion = 0
+        SI aplicar_afiliacion ES VERDADERO ENTONCES
+            comision_afiliacion = comision_afiliacion_monto
+            igv_afiliacion = comision_afiliacion * igv_pct
+        FIN SI
+
+        // Cálculo de valores finales
+        abono_real_final = capital - interes - igv_interes - comision_estructuracion - igv_comision - comision_afiliacion - igv_afiliacion
+        margen_seguridad = monto_factura - capital
+        tasa_avance_encontrada = capital / monto_factura
+
+        // Preparar y retornar el desglose completo de resultados
+        RETORNAR { tasa_avance_encontrada, abono_real_final, monto_objetivo, capital, interes, igv_interes, comision_estructuracion, igv_comision, comision_afiliacion, igv_afiliacion, margen_seguridad, plazo, desglose_detallado }
+
+        FIN FUNCIÓN
+
+
+    // =================================================================================
+    // BLOQUE DE EJECUCIÓN PRINCIPAL (Pruebas)
+    // =================================================================================
+    INICIO BLOQUE PRINCIPAL
+
+        // --- PRUEBA 1: Moneda PEN (Soles) ---
+        IMPRIMIR "--- PRUEBA EN SOLES (PEN) ---"
+        // 1. Definir datos de entrada para un caso en PEN.
+        datos_pen = { plazo: 53, monto_factura: 8178.82, tasa_avance: 0.98, ... etc. }
+
+        // 2. Calcular el desembolso inicial teórico con los datos de prueba.
+        resultado_inicial_pen = LLAMAR calcular_desembolso_inicial(datos_pen)
+        IMPRIMIR "Abono Teórico Inicial (PEN):", resultado_inicial_pen.abono_teorico
+
+        // 3. Simular un "monto objetivo" redondeando el resultado anterior.
+        monto_objetivo_pen = REDONDEAR_HACIA_ABAJO(resultado_inicial_pen.abono_teorico / 10) * 10
+        IMPRIMIR "Monto Objetivo Redondeado (PEN):", monto_objetivo_pen
+
+        // 4. Buscar la tasa de avance necesaria para alcanzar ese monto objetivo.
+        datos_busqueda_pen = datos_pen (sin la tasa_avance) + { monto_objetivo: monto_objetivo_pen }
+        resultado_final_pen = LLAMAR encontrar_tasa_de_avance(datos_busqueda_pen)
+
+        // 5. Imprimir el resultado final detallado.
+        IMPRIMIR "Resultado Final (PEN):", resultado_final_pen (en formato JSON)
+
+
+        // --- PRUEBA 2: Moneda USD (Dólares) ---
+        IMPRIMIR "--- PRUEBA EN DÓLARES (USD) ---"
+        // 1. Definir datos de entrada para un caso en USD.
+        datos_usd = { plazo: 10, monto_factura: 5000.00, tasa_avance: 0.97, ... etc. }
+
+        // 2. Repetir los pasos 2 a 5 como en la prueba de PEN, pero con los datos en USD.
+        resultado_inicial_usd = LLAMAR calcular_desembolso_inicial(datos_usd)
+        monto_objetivo_usd = REDONDEAR_HACIA_ABAJO(resultado_inicial_usd.abono_teorico / 10) * 10
+        datos_busqueda_usd = datos_usd (sin la tasa_avance) + { monto_objetivo: monto_objetivo_usd }
+        resultado_final_usd = LLAMAR encontrar_tasa_de_avance(datos_busqueda_usd)
+        IMPRIMIR "Resultado Final (USD):", resultado_final_usd (en formato JSON)
+
+    FIN BLOQUE PRINCIPAL
+
+FIN PROGRAMA
+```

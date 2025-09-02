@@ -1,0 +1,27 @@
+# requirements.txt consolidado para Inandes Factoring App
+# Este archivo lista todas las dependencias de Python necesarias para el proyecto.
+# Se recomienda fijar las versiones para asegurar un entorno de producción estable (ej. streamlit==1.26.0)
+
+# Core de las aplicaciones y API
+streamlit
+fastapi
+uvicorn
+
+# Interacción con APIs y Base de Datos
+requests
+supabase
+python-dotenv
+
+# Procesamiento de Archivos y Datos
+pandas
+pdfplumber
+decimal
+
+# Generación de PDF y Plantillas
+jinja2
+reportlab
+
+# Dependencias transitivas importantes (pueden ser necesarias explícitamente)
+# Es posible que `pip freeze` en un entorno funcional revele más dependencias
+# que deban ser añadidas aquí para mayor robustez.
+pydantic

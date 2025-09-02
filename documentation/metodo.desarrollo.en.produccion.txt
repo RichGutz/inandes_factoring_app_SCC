@@ -1,0 +1,100 @@
+¡Entendido! Es una excelente pregunta y es el paso lógico después de una arquitectura de despliegue como la
+  que has implementado. Has hecho un gran trabajo al separar las responsabilidades, es una práctica
+  profesional estándar. Te explico cómo seguir.
+
+  El Porqué: Ventajas de tu Nueva Arquitectura
+
+  Primero, felicidades. La arquitectura que tienes ahora es robusta:
+
+   1. Separación de Intereses: Tu frontend (Streamlit) se preocupa solo de la interfaz y la experiencia de
+      usuario. Tu backend (FastAPI en Render) se preocupa solo de la lógica de negocio, los cálculos y la
+      comunicación con la base de datos.
+   2. Escalabilidad: Si mañana tu app necesita más potencia de cálculo, puedes mejorar solo el servicio de
+      Render sin tocar el de Streamlit (y viceversa).
+   3. Estabilidad: El usuario interactúa con el frontend en Streamlit Cloud, que es un entorno estable y
+      siempre disponible. El backend en Render también lo es. Se elimina la fragilidad de ngrok y de tu máquina
+       local.
+
+  El Cómo: Tu Nuevo Flujo de Desarrollo
+
+  El cambio fundamental es pensar en tu proyecto no como una sola aplicación, sino como dos aplicaciones
+  separadas que se comunican a través de una API. Tu carpeta inandes_factoring_app_SCC contiene ambas, pero
+  mentalmente debes tratarlas por separado.
+
+  Aquí te presento el flujo de trabajo recomendado:
+
+  ---
+
+  Caso 1: Necesitas cambiar algo visual o de interfaz (Frontend)
+
+  Digamos que quieres cambiar un título, añadir un gráfico o modificar un formulario en Streamlit.
+
+   1. Trabaja localmente: Abre la carpeta C:\Users\rguti\inandes_factoring_app_SCC en tu editor de código.
+   2. Conecta tu frontend local al backend de producción: La clave está aquí. Tu Streamlit local no se
+      conectará a un backend en tu propia PC, sino al que ya está desplegado en Render.
+       * En tu código de Streamlit (ej. pages/01_Operaciones.py), la línea API_BASE_URL =
+         st.secrets["backend_api"]["url"] ya está preparada para esto. Para tu desarrollo local, puedes crear
+         un archivo .streamlit/secrets.toml dentro de inandes_factoring_app_SCC y poner allí la URL de tu API
+         de Render, así:
+
+   1         # .streamlit/secrets.toml
+   2         [backend_api]
+   3         url = "https://inandes-back.onrender.com"
+   3. Ejecuta solo el frontend: En tu terminal, inicia Streamlit (recuerda que tú te encargas de esto
+      manualmente).
+
+   1     # Estando en la carpeta C:\\Users\\rguti\\inandes_factoring_app_SCC
+   2     streamlit run 00_Home.py
+   4. Prueba: Tu aplicación se abrirá en tu navegador local, pero estará haciendo las llamadas de cálculo a la
+      API que vive en Render. Podrás hacer todos los cambios visuales que quieras y probarlos al instante, con
+      la certeza de que la lógica de negocio es la misma que la del entorno de producción.
+   5. Despliega: Una vez que estés contento con los cambios, haz commit y push. Streamlit Cloud se actualizará
+      automáticamente.
+
+  ---
+
+  Caso 2: Necesitas cambiar la lógica de cálculo o la base de datos (Backend)
+
+  Digamos que quieres ajustar la fórmula de cálculo de intereses.
+
+   1. Trabaja localmente: Abre la carpeta C:\Users\rguti\inandes_factoring_app_SCC y enfócate en los archivos
+      dentro de src/.
+   2. Ejecuta solo el backend: Inicia tu servidor de FastAPI localmente (de nuevo, tú te encargas de esto).
+
+   1     # Estando en la carpeta C:\\Users\\rguti\\inandes_factoring_app_SCC
+   2     uvicorn src.api.main:app --reload
+   3. Prueba el API directamente: Esta es la parte más eficiente. No necesitas el frontend para probar el
+      backend. Abre tu navegador y ve a http://127.0.0.1:8000/docs.
+       * FastAPI te dará una interfaz interactiva donde puedes probar tus endpoints
+    1 ┌───────────────────────────────────────────┐
+    2 │               TU COMPUTADORA              │
+    3 │                                           │
+    4 │   Opción A: Desarrollo de FRONTEND        │
+    5 │   ┌───────────────────────────────┐       │
+    6 │   │ streamlit run 00_Home.py      │───────┐
+    7 │   └───────────────────────────────┘       │
+    8 │                                           │
+    9 │   Opción B: Desarrollo de BACKEND         │
+   10 │   ┌───────────────────────────────┐       │
+   11 │   │ uvicorn src.api.main:app      │       │
+   12 │   │ (Pruebas en http://.../docs)  │       │
+   13 │   └───────────────────────────────┘       │
+   14 │                                           │
+   15 └───────────────────────────────────────────┘
+  En resumen: Tu entorno local ahora es para desarrollar una pieza a la vez, conectándote a las otras piezas
+   que ya están en la nube. Este es el camino a seguir. ¡Ya has superado la parte más difícil
+
+╭─────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│  > en resumen de dices que puedo seguir desarrollando como lo hacia antas (mas o menos) desarrollo en   │
+│    local, pruebo en local (front conectado a render) y back a traves de uvicorn?                        │
+╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+✦ Sí, ese es exactamente el resumen. Lo has captado perfectamente.
+
+   1. Para el Frontend: Sigues desarrollando localmente como antes, pero en lugar de usar ngrok, tu Streamlit
+      local se conecta directamente a la API de Render que ya está en la nube.
+   2. Para el Backend: Sigues desarrollando localmente como antes, ejecutando uvicorn y probando tus cambios de
+       lógica directamente con la interfaz de /docs o una herramienta similar.
+
+  Cuando todo funcione en tus pruebas locales, haces git push para que los cambios se actualicen en la nube.
+   El flujo es muy parecido, pero más robusto y profesional.

@@ -1,0 +1,61 @@
+Instrucciones para Obtener Credenciales de Google OAuth 2.0
+
+Este documento te guiará paso a paso para configurar tu proyecto en Google Cloud Console y obtener el Client ID y Client Secret necesarios para la autenticación de tu aplicación Streamlit.
+
+---
+
+Paso 1: Acceder a Google Cloud Console y Crear un Proyecto
+1.  Ve a la [Google Cloud Console](https://console.cloud.google.com/).
+2.  Si es tu primera vez, acepta los términos.
+3.  En la parte superior, junto al logo de Google Cloud, haz clic en el selector de proyecto (probablemente dirá "My First Project" o el nombre de un proyecto existente).
+4.  En la ventana emergente, haz clic en **"Nuevo proyecto"**.
+5.  Dale un nombre a tu proyecto (ej. `Inandes Factoring App`) y haz clic en **"Crear"**. Espera a que se cree.
+
+Paso 2: Configurar la Pantalla de Consentimiento de OAuth
+1.  Una vez creado el proyecto, asegúrate de que esté seleccionado en la parte superior.
+2.  En el menú de navegación de la izquierda, ve a **"APIs y servicios" > "Pantalla de consentimiento de OAuth"**.
+3.  **Tipo de usuario:** Selecciona **"Externo"** (a menos que tu app sea solo para usuarios de tu organización de Google Workspace). Haz clic en **"Crear"**.
+4.  **Pantalla de consentimiento de OAuth:**
+    *   **Nombre de la aplicación:** `Inandes Factoring App` (o el que prefieras).
+    *   **Correo electrónico de asistencia al usuario:** Tu correo electrónico.
+    *   **Logotipo de la aplicación:** (Opcional, puedes dejarlo en blanco por ahora).
+    *   **Dominio de la aplicación:** (Opcional, puedes dejarlo en blanco por ahora).
+    *   **Información de contacto del desarrollador:** Tu correo electrónico.
+    *   Haz clic en **"Guardar y continuar"**.
+
+Paso 3: Añadir Scopes (Permisos)
+1.  En la sección "Scopes", haz clic en **"Añadir o eliminar ámbitos"**.
+2.  Busca y selecciona los siguientes scopes (permisos):
+    *   `.../auth/userinfo.email` (para obtener el correo electrónico del usuario)
+    *   `.../auth/userinfo.profile` (para obtener el nombre y la foto de perfil del usuario)
+3.  Haz clic en **"Actualizar"** y luego en **"Guardar y continuar"**.
+
+Paso 4: Añadir Usuarios de Prueba (Importante para desarrollo)
+1.  En la sección "Usuarios de prueba", haz clic en **"Añadir usuarios"**.
+2.  Introduce las direcciones de correo electrónico de las cuentas de Google que usarás para probar la aplicación (puedes añadir la tuya).
+3.  Haz clic en **"Guardar y continuar"**.
+4.  Revisa el resumen y haz clic en **"Volver al panel"**.
+
+Paso 5: Crear Credenciales de Cliente de OAuth
+1.  En el menú de navegación de la izquierda, ve a **"APIs y servicios" > "Credenciales"**.
+2.  Haz clic en **"Crear credenciales"** y selecciona **"ID de cliente de OAuth"**.
+3.  **Tipo de aplicación:** Selecciona **"Aplicación web"**.
+4.  **Nombre:** Dale un nombre (ej. `Streamlit OAuth Client`).
+5.  **Orígenes de JavaScript autorizados:**
+    *   Haz clic en **"Añadir URI"**.
+    *   Introduce `http://localhost:8501` (esta es la URL donde Streamlit se ejecuta localmente).
+    *   **Importante:** Cuando despliegues tu aplicación en Streamlit Community Cloud (o cualquier otro servidor), deberás volver aquí y añadir la URL de tu aplicación desplegada (ej. `https://tu-app.streamlit.app`).
+6.  **URIs de redireccionamiento autorizados:**
+    *   Haz clic en **"Añadir URI"**.
+    *   Introduce `http://localhost:8501` (debe ser la misma que la anterior).
+    *   **Importante:** También deberás añadir aquí la URL de tu aplicación desplegada cuando la tengas.
+7.  Haz clic en **"Crear"**.
+
+Paso 6: Obtener Client ID y Client Secret
+1.  Se te mostrará una ventana emergente con tu **ID de cliente** y tu **Secreto de cliente**.
+2.  **Copia ambos valores.** Son los que necesitaré para el código.
+3.  Haz clic en **"Aceptar"**.
+
+---
+
+Una vez que tengas esos dos valores (Client ID y Client Secret), me los proporcionas (no el secreto directamente, sino que me confirmas que los tienes y los has guardado en `secrets.toml`).

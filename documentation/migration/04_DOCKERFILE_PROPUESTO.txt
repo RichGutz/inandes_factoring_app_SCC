@@ -1,0 +1,47 @@
+# Dockerfile Propuesto para el Proyecto Inandes Factoring App
+# Este Dockerfile está diseñado para construir una imagen que contenga tanto la API de FastAPI como las aplicaciones de Streamlit.
+
+# --- Etapa 1: Base y Dependencias ---
+# Usar una imagen oficial de Python. Se recomienda usar una versión específica.
+FROM python:3.11-slim
+
+# Establecer el directorio de trabajo dentro del contenedor
+WORKDIR /app
+
+# --- Variables de Entorno ---
+# Previene que Python escriba archivos .pyc y .pyo
+ENV PYTHONDONTWRITEBYTECODE 1
+# Previene que Python almacene en búfer stdout y stderr
+ENV PYTHONUNBUFFERED 1
+
+# --- Instalación de Dependencias ---
+# Copiar solo el archivo de requisitos primero para aprovechar el cache de Docker
+COPY requirements.txt .
+
+# Instalar las dependencias del proyecto
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# --- Copia del Código de la Aplicación ---
+# Copiar todo el contenido del proyecto al directorio de trabajo del contenedor
+COPY . .
+
+# --- Exponer Puertos ---
+# Exponer el puerto en el que se ejecutará la API de FastAPI (ej. 8000)
+EXPOSE 8000
+
+# Exponer el puerto en el que se ejecutará la aplicación de Streamlit (ej. 8501)
+EXPOSE 8501
+
+# --- Script de Inicio ---
+# Crear un script de inicio que lance tanto la API como la aplicación Streamlit.
+# Este script gestionará el inicio de ambos procesos.
+COPY ./start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
+# --- Comando de Ejecución ---
+# Usar el script de inicio como el comando principal del contenedor.
+CMD ["/app/start.sh"]
+
+
+# --- Contenido del script `start.sh` (Debe crearse en la raíz del proyecto) ---

@@ -1,0 +1,87 @@
+Interpretación del Pseudocódigo (Refinamiento 5)
+
+El proceso se divide en dos grandes áreas: la interfaz de usuario (frontend) y la lógica de cálculo (backend).
+
+---
+1. Flujo de la Aplicación (Frontend - Lo que el usuario ve y hace)
+---
+
+1.1. Búsqueda Inicial:
+El usuario introduce un "ID de Propuesta" y pulsa "Buscar". El sistema debe estar preparado para abrir una propuesta en cualquier estado: sin pagos, con pagos parciales, o ya liquidada.
+
+1.2. Carga de Datos:
+El sistema consulta una API para traer los datos originales de esa operación de factoring y también carga un historial de todos los pagos o "eventos de liquidación" que ya se hayan registrado para esa operación.
+
+1.3. Visualización del Historial:
+La aplicación muestra primero un resumen del negocio original. Luego, muestra en orden cada uno de los pagos anteriores, detallando los cálculos de cada uno.
+
+1.4. Proyección de Deuda:
+Si el último pago no cubrió toda la deuda y quedó un saldo pendiente, el sistema muestra una tabla que proyecta cómo crecerá esa deuda día a día. Esta tabla es una herramienta clave para que el usuario pueda comunicar al emisor (su cliente) el estado de un pago parcial y demostrarle cómo el saldo pendiente sigue creciendo.
+
+    1.4.1. Estructura de la Proyección:
+    La proyección se presentará en dos tablas separadas, cada una cubriendo 15 días. Las columnas de estas tablas serán las fechas, comenzando con el día siguiente a la 'Fecha de Pago Real' de la liquidación que se acaba de calcular. Cada tabla mostrará cómo el 'Nuevo Capital por Liquidar' crece diariamente, aplicando los intereses compensatorios, moratorios y sus IGV correspondientes.
+
+1.5. Nuevo Pago:
+Se presenta un formulario para que el usuario ingrese los detalles del siguiente pago que ha recibido (fecha, monto, etc.).
+
+1.6. Cálculo Simulado:
+Al pulsar "Calcular", el sistema realiza una simulación de la liquidación con los datos de este nuevo pago, pero sin guardarla todavía.
+
+1.7. Resultado y Acción de Guardado:
+El sistema muestra el resultado de esta simulación. Después de CUALQUIER cálculo (sea el saldo positivo, cero o negativo), aparecerá un botón clave: "Subir Liquidación a Supabase".
+
+    1.7.1. Nomenclatura de la Tabla de Resultados:
+    Para mantener la consistencia, la tabla de resultados siempre usará la siguiente terminología:
+        - La primera fila (el saldo inicial del cálculo) se llamará "Capital por Liquidar Anterior".
+        - La última fila (el resultado del cálculo) se llamará "Nuevo Capital por Liquidar".
+
+1.8. Persistencia:
+Al pulsar el botón "Subir Liquidación a Supabase", el sistema registra permanentemente este nuevo pago en la base de datos, actualiza el saldo deudor principal de la operación y recarga la aplicación para reflejar este nuevo estado.
+
+---
+2. Lógica de Cálculo (Backend - Cómo se calculan los números)
+---
+
+2.1. Punto de Partida:
+El cálculo de una liquidación se basa siempre en el saldo pendiente del evento anterior. Para el primer pago, la fecha de inicio del devengo de intereses es la 'fecha_pago_calculada' original de la propuesta. Para pagos subsiguientes, la fecha de inicio del devengo de intereses es la 'fecha_pago_real' del pago anterior.
+
+2.2. Diferencias Clave:
+Se calcula la diferencia de días (si se pagó antes, a tiempo o tarde) entre la fecha de inicio del devengo y la fecha de pago real actual. También se considera la diferencia de monto (si se pagó de más, de menos o exacto).
+
+2.3. Cálculo de Intereses (El Corazón de la Lógica):
+Los intereses (compensatorios y moratorios) se calculan siempre que haya días de diferencia positivos. Estos intereses se devengan hasta la fecha de pago real actual y se suman al capital adeudado antes de aplicar el monto del pago.
+    - Las tasas de interés (compensatoria y moratoria) se ingresan como porcentajes mensuales.
+    - Para el cálculo, estas tasas mensuales se convierten a tasas diarias dividiéndolas por 30 y por 100 (para obtener el decimal).
+    - Los intereses se calculan utilizando la fórmula de interés compuesto diario.
+    - Si se paga antes: Se calcula un "crédito" o "devolución" a favor del cliente por los intereses no devengados. El proceso de negocio es emitir una Nota de Crédito que incluya el IGV correspondiente, y el sistema debe reflejar este desglose.
+    - Si se paga a tiempo: No hay ni penalidades ni devoluciones.
+
+2.4. Saldo Final:
+El nuevo saldo pendiente es el resultado de tomar el capital adeudado (incluyendo los intereses devengados) y restarle el monto del pago recibido.
+    - Si el saldo final es negativo pero muy cercano a cero (por ejemplo, un sobrepago menor a 1.0), se considera que la operación está liquidada y el saldo se establece en 0.0.
+
+2.5. Resultado Detallado:
+La función devuelve un desglose completo de todos los cálculos (intereses, IGV, saldos, etc.). Los intereses (compensatorios y moratorios) y sus IGV siempre se muestran en el desglose, independientemente del tipo de pago.
+
+
+---
+### Fase 3: Mejoras en la Interfaz de Liquidación y Reportes (COMPLETADA)
+
+**Objetivo:** Rediseñar la interfaz de liquidación para incluir la carga de evidencias de pago y reflejar esta información en el reporte final.
+
+---
+### Fase 4: Refactorización del Backend y Frontend
+
+**Objetivo:** Simplificar el endpoint de liquidación, eliminar parámetros innecesarios y corregir el error 422.
+
+**Pasos Detallados:**
+
+1.  **Modificar `main.py` (Backend):**
+    *   En el modelo `LiquidarFacturaRequest`, eliminar el campo `margen_seguridad_original`.
+    *   En el endpoint `/liquidar_factura`, remover la lógica y parámetros innecesarios de la llamada a la función `calcular_liquidacion`.
+
+2.  **Modificar `liquidacion_app.py` (Frontend):**
+    *   Ajustar el `payload` de la petición a `/liquidar_factura` para que coincida con el nuevo modelo `LiquidarFacturaRequest`, eliminando el envío de `margen_seguridad_original`.
+    *   Asegurar que el campo `is_first_payment` se determine y envíe correctamente, ya que es crucial para la lógica de negocio en el backend.
+    *   Verificar que el formato de la fecha `fecha_pago_real` sea el correcto (`dd-mm-yyyy`) antes de enviarlo.
+---

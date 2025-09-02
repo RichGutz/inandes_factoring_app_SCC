@@ -1,0 +1,11 @@
+Este directorio contiene el plan detallado para la reestructuración y profesionalización del proyecto Inandes.TECH.
+
+El objetivo es migrar el código funcional desde la estructura actual a una nueva arquitectura limpia, modular y lista para ser desplegada en entornos de prueba (Streamlit Community Cloud) y producción.
+
+Los documentos en este directorio están numerados y deben leerse en orden para entender el plan completo:
+
+1. **01_ANALISIS_ACTUAL.md**: Describe la arquitectura actual del proyecto, sus componentes clave y los problemas identificados (dependencias, rutas absolutas, etc.).
+2. **02_NUEVA_ESTRUCTURA.md**: Propone la nueva estructura de carpetas profesional para el proyecto.
+3. **03_PLAN_DE_MIGRACION.md**: Detalla los pasos a seguir para migrar los archivos, corregir el código y preparar el proyecto para el despliegue.
+4. **04_DOCKERFILE_PROPUESTO.txt**: Contiene el borrador del Dockerfile para la aplicación.
+5. **05_REQUIREMENTS_PROPUESTO.txt**: Contiene la lista consolidada de dependencias de Python.

@@ -1,0 +1,54 @@
+Propuesta de Diseño para la Página de Inicio (Homepage)
+
+Archivo a crear: C:\Users\rguti\inandes_factoring_app\apps\00_Home.py
+
+---
+### 1. Título y Bienvenida
+---
+
+- **Encabezado:** Estilo estándar, con el título "Sistema de Gestión de Factoring".
+- **Párrafo de Bienvenida:**
+  > "Esta aplicación centraliza y automatiza el proceso de factoring, desde la originación de la operación hasta su liquidación y reporte. A continuación, se presenta el estado actual de los módulos. Navegue a los módulos completados usando los botones correspondientes."
+
+---
+### 2. Sección de Módulos Principales
+---
+
+Diseño en columnas, con una "tarjeta" para cada módulo.
+
+- **Módulo de Operaciones**
+  - **Estado:** ✅ En Producción
+  - **Descripción (hover):** "Gestión de operaciones para clientes existentes. Permite crear anexos, procesar facturas y generar los perfiles de la operación."
+  - **Acción:** Botón [Ir a Operaciones]
+
+- **Módulo de Liquidación**
+  - **Estado:** ✅ En Producción
+  - **Descripción (hover):** "Procesa los pagos recibidos, determina si fueron a tiempo, anticipados o tardíos, y calcula los ajustes finales."
+  - **Acción:** Botón [Ir a Liquidaciones]
+
+- **Módulo de Desembolso**
+  - **Estado:** 📝 Planeado
+  - **Descripción (hover):** "Automatiza la solicitud de Letras Electrónicas, contrasta datos y gestiona la aprobación del desembolso."
+  - **Acción:** Botón [Próximamente] (deshabilitado)
+
+---
+### 3. Sección de Módulos Futuros y de Soporte
+---
+
+- **Módulo de Clientes**
+  - **Estado:** 📝 Planeado
+  - **Descripción (hover):** "Manejo de nuevos clientes, incluyendo la creación de perfiles, generación de contratos y gestión de firmas electrónicas."
+  - **Acción:** Botón [Próximamente] (deshabilitado)
+
+- **Módulo de Reportes**
+  - **Estado:** 📝 Planeado
+  - **Descripción (hover):** "Generación de reportes gerenciales (volumen, mora, etc.) y tributarios para el análisis y control del negocio."
+  - **Acción:** Botón [Próximamente] (deshabilitado)
+
+---
+### 4. Flujograma Simplificado
+---
+
+Una línea de texto al final de la página para mostrar el flujo general:
+
+> `Clientes` → `Operaciones` → `Desembolso` → `Liquidación` → `Reportes`

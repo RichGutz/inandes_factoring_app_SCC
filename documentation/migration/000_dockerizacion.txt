@@ -1,0 +1,31 @@
+Soy un desarrollador hobbysta que con la ayuda de la AI se esta forjando una nueva profesion de desarrollador de SaaS empresariales.
+
+C:\Users\rguti\Inandes.TECH contiene el trabajo de 2 meses de desarrollo de un app para un fondo de inversion dedicado al factoring.
+
+He construido el corazon de mini ERP que planeo crear: el corazon es el modulo de operaciones y el modulo de liquidacion.
+
+Ahora quiero pasarlo a un ambiente de pruebas que este disponible para el USER siempre. Antes usaba ngrok pero es muy trabajoso.
+
+Deseo hacer una copia inteligente de mi folde de trabajo de la sgte manera:
+
+
+
+1. Deseo usar Streamlit Community Cloud para que el user pueda prbar cuando desee
+
+2. Deseo que se limpie mi folder, solo se lleve los scripts que funcionan, cambiemos los nombres de folders y su estrcurtura para haerla mas pro
+
+3. Deseo hacer una dockerizacion
+
+4. En suma , mejorar la organizacion para prepararme para salir a PRODUCCION.
+
+5. Mi objetivo final despues de que el USER de su OK, es abandonar Streamlit y pasarme a REFLEX cuando no haya BUGS pues tendre que familiarizarme con REFLEX.
+
+
+TE DOY 10 MINUTOS PARA INVESTIGAR COMO FUNCIONA TODA MI APP, TRAZAR UN PLAN, ORGANIZAR COMO SERIAN LAS CARPETAS, QUE SCRIPTS VAS A LLEVAR. QUIERO VER UN PLAN
+DETALLADISIMO ANTES DE CREAR LA NUEVA CARPETA Y EJECUTAR. TODO LO QUE TENEMOS EN ESTA CARPETA FUNCIONA !
+
+
+
+
+
+
