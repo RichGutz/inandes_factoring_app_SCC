@@ -50,9 +50,35 @@ def generate_perfil_operacion_pdf(invoices_data: List[Dict[str, Any]]) -> bytes 
     """
     Generates the 'Perfil de Operación' PDF for one or more invoices and returns it as bytes.
     """
+    # --- Calculate Totals for the Consolidated Summary ---
+    total_monto_total_factura = sum(inv.get('monto_total_factura', 0) for inv in invoices_data)
+    total_detraccion_monto = sum(inv.get('detraccion_monto', 0) for inv in invoices_data)
+    total_monto_neto_factura = sum(inv.get('monto_neto_factura', 0) for inv in invoices_data)
+    total_margen_seguridad = sum(inv.get('recalculate_result', {}).get('desglose_final_detallado', {}).get('margen_seguridad', {}).get('monto', 0) for inv in invoices_data)
+    total_capital = sum(inv.get('recalculate_result', {}).get('calculo_con_tasa_encontrada', {}).get('capital', 0) for inv in invoices_data)
+    total_intereses = sum(inv.get('recalculate_result', {}).get('desglose_final_detallado', {}).get('interes', {}).get('monto', 0) for inv in invoices_data)
+    total_igv_interes = sum(inv.get('recalculate_result', {}).get('calculo_con_tasa_encontrada', {}).get('igv_interes', 0) for inv in invoices_data)
+    total_comision_estructuracion = sum(inv.get('recalculate_result', {}).get('desglose_final_detallado', {}).get('comision_estructuracion', {}).get('monto', 0) for inv in invoices_data)
+    total_igv_com_est = sum(inv.get('recalculate_result', {}).get('calculo_con_tasa_encontrada', {}).get('igv_comision_estructuracion', 0) for inv in invoices_data)
+    total_comision_afiliacion = sum(inv.get('recalculate_result', {}).get('desglose_final_detallado', {}).get('comision_afiliacion', {}).get('monto', 0) for inv in invoices_data)
+    total_igv_com_afi = sum(inv.get('recalculate_result', {}).get('calculo_con_tasa_encontrada', {}).get('igv_afiliacion', 0) for inv in invoices_data)
+    total_monto_desembolsar = sum(inv.get('recalculate_result', {}).get('desglose_final_detallado', {}).get('abono', {}).get('monto', 0) for inv in invoices_data)
+
     template_data = {
         'invoices': invoices_data,
-        'print_date': datetime.datetime.now().strftime('%d-%m-%Y %H:%M:%S')
+        'print_date': datetime.datetime.now().strftime('%d-%m-%Y %H:%M:%S'),
+        'total_monto_total_factura': total_monto_total_factura,
+        'total_detraccion_monto': total_detraccion_monto,
+        'total_monto_neto_factura': total_monto_neto_factura,
+        'total_margen_seguridad': total_margen_seguridad,
+        'total_capital': total_capital,
+        'total_intereses': total_intereses,
+        'total_igv_interes': total_igv_interes,
+        'total_comision_estructuracion': total_comision_estructuracion,
+        'total_igv_com_est': total_igv_com_est,
+        'total_comision_afiliacion': total_comision_afiliacion,
+        'total_igv_com_afi': total_igv_com_afi,
+        'total_monto_desembolsar': total_monto_desembolsar,
     }
     return _generate_pdf_in_memory("perfil_operacion.html", template_data)
 

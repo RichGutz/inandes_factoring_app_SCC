@@ -189,129 +189,60 @@
         <table>
             <thead>
                 <tr>
-                    <th>Item</th>
-                    {% for invoice in invoices %}
-                        <th>Factura {{ invoice.numero_factura }}</th>
-                    {% endfor %}
-                    <th>Total</th>
+                    <th>Factura</th>
+                    <th>Monto Total</th>
+                    <th>Detracción / Retención</th>
+                    <th>Monto Neto</th>
+                    <th>Margen de Seguridad</th>
+                    <th>Capital</th>
+                    <th>Intereses</th>
+                    <th>IGV Intereses</th>
+                    <th>Com. Estructuración</th>
+                    <th>IGV Com. Estruct.</th>
+                    {% set show_afiliacion = (total_comision_afiliacion > 0) %}
+                    {% if show_afiliacion %}
+                    <th>Com. Afiliación</th>
+                    <th>IGV Com. Afiliación</th>
+                    {% endif %}
+                    <th>Monto a Desembolsar</th>
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td>Monto Total de Factura</td>
-                    {% set total = namespace(value=0) %}
-                    {% for invoice in invoices %}
-                        <td>{{ "{:,.2f}".format(invoice.monto_total_factura) }}</td>
-                        {% set total.value = total.value + invoice.monto_total_factura %}
-                    {% endfor %}
-                    <td><b>{{ "{:,.2f}".format(total.value) }}</b></td>
-                </tr>
-                <tr>
-                    <td>Detracción / Retención</td>
-                    {% set total = namespace(value=0) %}
-                    {% for invoice in invoices %}
-                        <td>{{ "{:,.2f}".format(invoice.detraccion_monto) }}</td>
-                        {% set total.value = total.value + invoice.detraccion_monto %}
-                    {% endfor %}
-                    <td><b>{{ "{:,.2f}".format(total.value) }}</b></td>
-                </tr>
-                <tr>
-                    <td>Monto Neto de Factura</td>
-                    {% set total = namespace(value=0) %}
-                    {% for invoice in invoices %}
-                        <td>{{ "{:,.2f}".format(invoice.monto_neto_factura) }}</td>
-                        {% set total.value = total.value + invoice.monto_neto_factura %}
-                    {% endfor %}
-                    <td><b>{{ "{:,.2f}".format(total.value) }}</b></td>
-                </tr>
-                <tr>
-                    <td>Margen de Seguridad</td>
-                    {% set total = namespace(value=0) %}
-                    {% for invoice in invoices %}
-                        <td>{{ "{:,.2f}".format(invoice.recalculate_result.desglose_final_detallado.margen_seguridad.monto) }}</td>
-                        {% set total.value = total.value + invoice.recalculate_result.desglose_final_detallado.margen_seguridad.monto %}
-                    {% endfor %}
-                    <td><b>{{ "{:,.2f}".format(total.value) }}</b></td>
-                </tr>
-                <tr>
-                    <td>Capital</td>
-                    {% set total = namespace(value=0) %}
-                    {% for invoice in invoices %}
-                        <td>{{ "{:,.2f}".format(invoice.recalculate_result.calculo_con_tasa_encontrada.capital) }}</td>
-                        {% set total.value = total.value + invoice.recalculate_result.calculo_con_tasa_encontrada.capital %}
-                    {% endfor %}
-                    <td><b>{{ "{:,.2f}".format(total.value) }}</b></td>
-                </tr>
-                <tr>
-                    <td>Intereses</td>
-                    {% set total = namespace(value=0) %}
-                    {% for invoice in invoices %}
-                        <td>{{ "{:,.2f}".format(invoice.recalculate_result.desglose_final_detallado.interes.monto) }}</td>
-                        {% set total.value = total.value + invoice.recalculate_result.desglose_final_detallado.interes.monto %}
-                    {% endfor %}
-                    <td><b>{{ "{:,.2f}".format(total.value) }}</b></td>
-                </tr>
-                <tr>
-                    <td>IGV sobre Intereses</td>
-                    {% set total = namespace(value=0) %}
-                    {% for invoice in invoices %}
-                        <td>{{ "{:,.2f}".format(invoice.recalculate_result.calculo_con_tasa_encontrada.igv_interes) }}</td>
-                        {% set total.value = total.value + invoice.recalculate_result.calculo_con_tasa_encontrada.igv_interes %}
-                    {% endfor %}
-                    <td><b>{{ "{:,.2f}".format(total.value) }}</b></td>
-                </tr>
-                <tr>
-                    <td>Comisión de Estructuración</td>
-                    {% set total = namespace(value=0) %}
-                    {% for invoice in invoices %}
-                        <td>{{ "{:,.2f}".format(invoice.recalculate_result.desglose_final_detallado.comision_estructuracion.monto) }}</td>
-                        {% set total.value = total.value + invoice.recalculate_result.desglose_final_detallado.comision_estructuracion.monto %}
-                    {% endfor %}
-                    <td><b>{{ "{:,.2f}".format(total.value) }}</b></td>
-                </tr>
-                <tr>
-                    <td>IGV sobre Com. de Estruct.</td>
-                    {% set total = namespace(value=0) %}
-                    {% for invoice in invoices %}
-                        <td>{{ "{:,.2f}".format(invoice.recalculate_result.calculo_con_tasa_encontrada.igv_comision_estructuracion) }}</td>
-                        {% set total.value = total.value + invoice.recalculate_result.calculo_con_tasa_encontrada.igv_comision_estructuracion %}
-                    {% endfor %}
-                    <td><b>{{ "{:,.2f}".format(total.value) }}</b></td>
-                </tr>
-                {% set show_afiliacion = namespace(value=false) %}
                 {% for invoice in invoices %}
-                    {% if invoice.recalculate_result.desglose_final_detallado.comision_afiliacion.monto > 0 %}
-                        {% set show_afiliacion.value = true %}
+                <tr>
+                    <td>{{ invoice.numero_factura }}</td>
+                    <td>{{ "{:,.2f}".format(invoice.monto_total_factura) }}</td>
+                    <td>{{ "{:,.2f}".format(invoice.detraccion_monto) }}</td>
+                    <td>{{ "{:,.2f}".format(invoice.monto_neto_factura) }}</td>
+                    <td>{{ "{:,.2f}".format(invoice.recalculate_result.desglose_final_detallado.margen_seguridad.monto) }}</td>
+                    <td>{{ "{:,.2f}".format(invoice.recalculate_result.calculo_con_tasa_encontrada.capital) }}</td>
+                    <td>{{ "{:,.2f}".format(invoice.recalculate_result.desglose_final_detallado.interes.monto) }}</td>
+                    <td>{{ "{:,.2f}".format(invoice.recalculate_result.calculo_con_tasa_encontrada.igv_interes) }}</td>
+                    <td>{{ "{:,.2f}".format(invoice.recalculate_result.desglose_final_detallado.comision_estructuracion.monto) }}</td>
+                    <td>{{ "{:,.2f}".format(invoice.recalculate_result.calculo_con_tasa_encontrada.igv_comision_estructuracion) }}</td>
+                    {% if show_afiliacion %}
+                    <td>{{ "{:,.2f}".format(invoice.recalculate_result.desglose_final_detallado.comision_afiliacion.monto) }}</td>
+                    <td>{{ "{:,.2f}".format(invoice.recalculate_result.calculo_con_tasa_encontrada.igv_afiliacion) }}</td>
                     {% endif %}
+                    <td><b>{{ "{:,.2f}".format(invoice.recalculate_result.desglose_final_detallado.abono.monto) }}</b></td>
+                </tr>
                 {% endfor %}
-                {% if show_afiliacion.value %}
-                <tr>
-                    <td>Comisión de Afiliación</td>
-                    {% set total = namespace(value=0) %}
-                    {% for invoice in invoices %}
-                        <td>{{ "{:,.2f}".format(invoice.recalculate_result.desglose_final_detallado.comision_afiliacion.monto) }}</td>
-                        {% set total.value = total.value + invoice.recalculate_result.desglose_final_detallado.comision_afiliacion.monto %}
-                    {% endfor %}
-                    <td><b>{{ "{:,.2f}".format(total.value) }}</b></td>
-                </tr>
-                <tr>
-                    <td>IGV sobre Com. de Afiliación</td>
-                    {% set total = namespace(value=0) %}
-                    {% for invoice in invoices %}
-                        <td>{{ "{:,.2f}".format(invoice.recalculate_result.calculo_con_tasa_encontrada.igv_afiliacion) }}</td>
-                        {% set total.value = total.value + invoice.recalculate_result.calculo_con_tasa_encontrada.igv_afiliacion %}
-                    {% endfor %}
-                    <td><b>{{ "{:,.2f}".format(total.value) }}</b></td>
-                </tr>
-                {% endif %}
                 <tr style="background-color: #f2f2f2;">
-                    <td><b>Monto a Desembolsar</b></td>
-                    {% set total = namespace(value=0) %}
-                    {% for invoice in invoices %}
-                        <td><b>{{ "{:,.2f}".format(invoice.recalculate_result.desglose_final_detallado.abono.monto) }}</b></td>
-                        {% set total.value = total.value + invoice.recalculate_result.desglose_final_detallado.abono.monto %}
-                    {% endfor %}
-                    <td><b>{{ "{:,.2f}".format(total.value) }}</b></td>
+                    <td><b>Total</b></td>
+                    <td><b>{{ "{:,.2f}".format(total_monto_total_factura) }}</b></td>
+                    <td><b>{{ "{:,.2f}".format(total_detraccion_monto) }}</b></td>
+                    <td><b>{{ "{:,.2f}".format(total_monto_neto_factura) }}</b></td>
+                    <td><b>{{ "{:,.2f}".format(total_margen_seguridad) }}</b></td>
+                    <td><b>{{ "{:,.2f}".format(total_capital) }}</b></td>
+                    <td><b>{{ "{:,.2f}".format(total_intereses) }}</b></td>
+                    <td><b>{{ "{:,.2f}".format(total_igv_interes) }}</b></td>
+                    <td><b>{{ "{:,.2f}".format(total_comision_estructuracion) }}</b></td>
+                    <td><b>{{ "{:,.2f}".format(total_igv_com_est) }}</b></td>
+                    {% if show_afiliacion %}
+                    <td><b>{{ "{:,.2f}".format(total_comision_afiliacion) }}</b></td>
+                    <td><b>{{ "{:,.2f}".format(total_igv_com_afi) }}</b></td>
+                    {% endif %}
+                    <td><b>{{ "{:,.2f}".format(total_monto_desembolsar) }}</b></td>
                 </tr>
             </tbody>
         </table>
