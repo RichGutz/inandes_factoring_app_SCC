@@ -221,6 +221,27 @@ if 'interes_moratorio_global' not in st.session_state: st.session_state.interes_
 # --- UI: Título y CSS ---
 st.markdown("<style>\n[data-testid=\"stHorizontalBlock\"] { \n    align-items: flex-start; \n}\n</style>", unsafe_allow_html=True)
 
+st.markdown("""
+<style>
+.stButton>button.red-button {
+    background-color: #FF4B4B; /* Streamlit's default red for error messages */
+    color: white;
+    border-color: #FF4B4B;
+}
+.stButton>button.red-button:hover {
+    background-color: #FF6F6F; /* Slightly lighter red on hover */
+    border-color: #FF6F6F;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# --- Comments for Buttons ---
+COMMENT_CALCULAR = "Revise todos los parámetros antes de calcular. Si después de ejecutar el cálculo detecta algún error de ingreso, puede corregir la variable y volver a calcular."
+COMMENT_GRABAR = "Suba a la base de datos si está seguro de los detalles de la operación. Puede Generar perfil de operación sin subir a la base de datos."
+COMMENT_PERFIL = "Genere el perfil completo de la operación sin haber subido a base de datos para revisar y habiendo subido a base de datos para obtener los IDs de lotes."
+COMMENT_LIQUIDACION = "Una vez registrada la operación en base de datos, genere el reporte de liquidación para el cliente."
+
+
 col1, col2, col3 = st.columns([0.25, 0.5, 0.25])
 with col1:
     st.image(os.path.join(project_root, "static", "logo_geek.png"), width=200)
@@ -370,101 +391,7 @@ if st.session_state.invoices_data:
         st.number_input("Valor Días Mínimos", key='dias_interes_minimo_global', min_value=0, step=1, on_change=handle_global_min_interest_days_change)
 
 
-    # --- Cálculo Global ---
-    if st.button("Calcular Todas las Facturas", key="calculate_all_invoices"):
-        all_valid = True
-        for idx, invoice in enumerate(st.session_state.invoices_data):
-            if not validate_inputs(invoice):
-                st.error(f"La Factura {idx + 1} ({invoice.get('parsed_pdf_name', 'N/A')}) tiene campos incompletos o inválidos.")
-                all_valid = False
-        
-        if not all_valid:
-            st.warning("No se pueden calcular todas las facturas. Por favor, revisa los errores mencionados arriba.")
-        else:
-            st.success("Todas las facturas son válidas. Iniciando cálculos en lote...")
-            
-            lote_desembolso_payload = []
-            num_invoices = len(st.session_state.invoices_data)
-            
-            for invoice in st.session_state.invoices_data:
-                comision_pen_apportioned = st.session_state.get('comision_afiliacion_pen_global', 0.0) / num_invoices if num_invoices > 0 else 0
-                comision_usd_apportioned = st.session_state.get('comision_afiliacion_usd_global', 0.0) / num_invoices if num_invoices > 0 else 0
-                comision_estructuracion_pct = st.session_state.comision_estructuracion_pct_global
-                comision_min_pen_apportioned_struct = st.session_state.comision_estructuracion_min_pen_global / num_invoices if num_invoices > 0 else 0
-                comision_min_usd_apportioned_struct = st.session_state.comision_estructuracion_min_usd_global / num_invoices if num_invoices > 0 else 0
-
-                if invoice['moneda_factura'] == 'USD':
-                    comision_minima_aplicable = comision_min_usd_apportioned_struct
-                    comision_afiliacion_aplicable = comision_usd_apportioned
-                else:
-                    comision_minima_aplicable = comision_min_pen_apportioned_struct
-                    comision_afiliacion_aplicable = comision_pen_apportioned
-
-                plazo_real = invoice.get('plazo_operacion_calculado', 0)
-                plazo_para_api = plazo_real
-                if st.session_state.get('aplicar_dias_interes_minimo_global', False):
-                    dias_minimos_a_usar = invoice.get('dias_minimos_interes_individual', 15)
-                    plazo_para_api = max(plazo_real, dias_minimos_a_usar)
-
-                api_data = {
-                    "plazo_operacion": plazo_para_api,
-                    "mfn": invoice['monto_neto_factura'],
-                    "tasa_avance": invoice['tasa_de_avance'] / 100,
-                    "interes_mensual": invoice['interes_mensual'] / 100,
-                    "interes_moratorio_mensual": invoice['interes_moratorio'] / 100,
-                    "comision_estructuracion_pct": comision_estructuracion_pct / 100,
-                    "comision_minima_aplicable": comision_minima_aplicable,
-                    "igv_pct": 0.18,
-                    "comision_afiliacion_aplicable": comision_afiliacion_aplicable,
-                    "aplicar_comision_afiliacion": st.session_state.get('aplicar_comision_afiliacion_global', False)
-                }
-                lote_desembolso_payload.append(api_data)
-
-            try:
-                with st.spinner("Calculando desembolso inicial para todas las facturas..."):
-                    response = requests.post(f"{API_BASE_URL}/calcular_desembolso_lote", json=lote_desembolso_payload)
-                    response.raise_for_status()
-                    initial_calc_results_lote = response.json()
-
-                if initial_calc_results_lote.get("error"):
-                    st.error(f"Error en el cálculo de desembolso en lote: {initial_calc_results_lote.get('error')}")
-                    st.stop()
-
-                lote_encontrar_tasa_payload = []
-                for idx, invoice in enumerate(st.session_state.invoices_data):
-                    invoice['initial_calc_result'] = initial_calc_results_lote["resultados_por_factura"][idx]
-                    
-                    if invoice['initial_calc_result'] and 'abono_real_teorico' in invoice['initial_calc_result']:
-                        abono_real_teorico = invoice['initial_calc_result']['abono_real_teorico']
-                        monto_desembolsar_objetivo = (abono_real_teorico // 10) * 10
-
-                        api_data_recalculate = lote_desembolso_payload[idx].copy()
-                        api_data_recalculate["monto_objetivo"] = monto_desembolsar_objetivo
-                        api_data_recalculate.pop("tasa_avance", None)
-                        
-                        lote_encontrar_tasa_payload.append(api_data_recalculate)
-                    else:
-                        invoice['recalculate_result'] = None
-
-                if lote_encontrar_tasa_payload:
-                    with st.spinner("Ajustando tasa de avance para todas las facturas..."):
-                        response_recalculate = requests.post(f"{API_BASE_URL}/encontrar_tasa_lote", json=lote_encontrar_tasa_payload)
-                        response_recalculate.raise_for_status()
-                        recalculate_results_lote = response_recalculate.json()
-
-                    if recalculate_results_lote.get("error"):
-                        st.error(f"Error en el ajuste de tasa en lote: {recalculate_results_lote.get('error')}")
-                        st.stop()
-                    
-                    for idx, invoice in enumerate(st.session_state.invoices_data):
-                        if idx < len(recalculate_results_lote.get("resultados_por_factura", [])):
-                            invoice['recalculate_result'] = recalculate_results_lote["resultados_por_factura"][idx]
-
-                st.success("¡Cálculo de todas las facturas completado!")
-
-            except requests.exceptions.RequestException as e:
-                st.error(f"Error de conexión con la API: {e}")
-
+    
 
 # --- UI: Formulario Principal ---
 if st.session_state.invoices_data:
@@ -476,7 +403,7 @@ if st.session_state.invoices_data:
             st.write("##### Involucrados")
             col_emisor_nombre, col_emisor_ruc, col_aceptante_nombre, col_aceptante_ruc = st.columns(4)
             with col_emisor_nombre:
-                invoice['emisor_nombre'] = st.text_input(" NOMBRE DEL EMISOR", value=invoice.get('emisor_nombre', ''), key=f"emisor_nombre_{idx}", label_visibility="visible")
+                invoice['emisor_nombre'] = st.text_input("NOMBRE DEL EMISOR", value=invoice.get('emisor_nombre', ''), key=f"emisor_nombre_{idx}", label_visibility="visible")
             with col_emisor_ruc:
                 invoice['emisor_ruc'] = st.text_input("RUC DEL EMISOR", value=invoice.get('emisor_ruc', ''), key=f"emisor_ruc_{idx}", label_visibility="visible")
             with col_aceptante_nombre:
@@ -679,163 +606,275 @@ if st.session_state.invoices_data:
                 tabla_md = "\n".join(lines)
                 st.markdown(tabla_md, unsafe_allow_html=True)
 
-# --- Pasos 3 y 4: Grabar e Imprimir ---
+        # --- Pasos 3 y 4: Grabar e Imprimir ---
+        st.markdown("---")
+        st.subheader("Acciones de la Operación")
 
-col_paso3, = st.columns(1)
+        st.write("##### Datos de Contrato (para Grabar)")
+        col_anexo, col_contrato = st.columns(2)
+        with col_anexo:
+            st.text_input("Número de Anexo", key="anexo_number_global")
+        with col_contrato:
+            st.text_input("Número de Contrato", key="contract_number_global")
 
-with col_paso3:
-    st.write("#### Grabar Propuesta")
-    st.write("##### 1. Ingresar Datos de Contrato")
+        st.markdown("---")
 
-    st.text_input("Número de Anexo", key="anexo_number_global")
-    st.text_input("Número de Contrato", key="contract_number_global")
+        # Define conditions for disabling buttons
+        has_recalc_result = any(invoice.get('recalculate_result') for invoice in st.session_state.invoices_data)
+        contract_fields_filled = bool(st.session_state.anexo_number_global) and bool(st.session_state.contract_number_global)
+        can_save_proposal = has_recalc_result and contract_fields_filled
+        can_print_profiles = has_recalc_result
 
-    has_recalc_result = any(invoice.get('recalculate_result') for invoice in st.session_state.invoices_data)
-    contract_fields_filled = bool(st.session_state.anexo_number_global) and bool(st.session_state.contract_number_global)
-    can_save_proposal = has_recalc_result and contract_fields_filled
+        # Create horizontal buttons
+        col1, col2, col3, col4 = st.columns(4)
 
-    if st.button("GRABAR Propuesta en Base de Datos", disabled=not can_save_proposal):
-        if can_save_proposal:
-            anexo_number_str = st.session_state.anexo_number_global
-            contract_number_str = st.session_state.contract_number_global
-            timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-            identificador_lote = f"LOTE-{contract_number_str}-{anexo_number_str}-{timestamp}"
-
-            for idx, invoice in enumerate(st.session_state.invoices_data):
-                if invoice.get('recalculate_result'):
-                    with st.spinner(f"Guardando propuesta para Factura {idx + 1}..."):
-                        anexo_number_int = int(anexo_number_str) if anexo_number_str else None
-                        contract_number_int = int(contract_number_str) if contract_number_str else None
-                        
-                        temp_session_data = {
-                            'emisor_nombre': invoice.get('emisor_nombre'),
-                            'emisor_ruc': invoice.get('emisor_ruc'),
-                            'aceptante_nombre': invoice.get('aceptante_nombre'),
-                            'aceptante_ruc': invoice.get('aceptante_ruc'),
-                            'numero_factura': invoice.get('numero_factura'),
-                            'monto_total_factura': invoice.get('monto_total_factura'),
-                            'monto_neto_factura': invoice.get('monto_neto_factura'),
-                            'moneda_factura': invoice.get('moneda_factura'),
-                            'fecha_emision_factura': invoice.get('fecha_emision_factura'),
-                            'plazo_credito_dias': invoice.get('plazo_credito_dias'),
-                            'fecha_desembolso_factoring': invoice.get('fecha_desembolso_factoring'),
-                            'tasa_de_avance': invoice.get('tasa_de_avance'),
-                            'interes_mensual': invoice.get('interes_mensual'),
-                            'interes_moratorio': invoice.get('interes_moratorio'),
-                            'comision_de_estructuracion': invoice.get('comision_de_estructuracion'),
-                            'comision_minima_pen': invoice.get('comision_minima_pen'),
-                            'comision_minima_usd': invoice.get('comision_minima_usd'),
-                            'comision_afiliacion_pen': invoice.get('comision_afiliacion_pen'),
-                            'comision_afiliacion_usd': invoice.get('comision_afiliacion_usd'),
-                            'aplicar_comision_afiliacion': invoice.get('aplicar_comision_afiliacion'),
-                            'detraccion_porcentaje': invoice.get('detraccion_porcentaje'),
-                            'fecha_pago_calculada': invoice.get('fecha_pago_calculada'),
-                            'plazo_operacion_calculado': invoice.get('plazo_operacion_calculado'),
-                            'initial_calc_result': invoice.get('initial_calc_result'),
-                            'recalculate_result': invoice.get('recalculate_result'),
-                            'anexo_number': anexo_number_int,
-                            'contract_number': contract_number_int,
-                        }
-                        success, message = db.save_proposal(temp_session_data, identificador_lote=identificador_lote)
-                        if success:
-                            st.success(message)
-                            if "Propuesta con ID" in message:
-                                start_index = message.find("ID ") + 3
-                                end_index = message.find(" guardada")
-                                newly_saved_id = message[start_index:end_index]
-                                invoice['proposal_id'] = newly_saved_id
-                                invoice['identificador_lote'] = identificador_lote
-                                st.session_state.last_saved_proposal_id = newly_saved_id
-
-                                if 'accumulated_proposals' not in st.session_state:
-                                    st.session_state.accumulated_proposals = []
-                                
-                                full_proposal_details = db.get_proposal_details_by_id(newly_saved_id)
-                                if full_proposal_details and 'proposal_id' in full_proposal_details:
-                                    if not any(p.get('proposal_id') == newly_saved_id for p in st.session_state.accumulated_proposals):
-                                        st.session_state.accumulated_proposals.append(full_proposal_details)
-                                        st.success(f"Propuesta {newly_saved_id} añadida a la lista de impresión.")
-                        else:
-                            st.error(message)
-        else:
-            st.warning("No hay resultados de cálculo para guardar.")
-
-    can_print_profiles = any(invoice.get('recalculate_result') for invoice in st.session_state.invoices_data)
-    
-    if st.button("Generar Perfil Operacion", disabled=not can_print_profiles):
-            if can_print_profiles:
-                st.write("Generando PDF...")
+        with col1:
+            if st.button("Calcular Facturas", key="calculate_all_invoices", help=COMMENT_CALCULAR, type="secondary", use_container_width=True):
+                all_valid = True
+                for idx_btn, invoice_btn in enumerate(st.session_state.invoices_data):
+                    if not validate_inputs(invoice_btn):
+                        st.error(f"La Factura {idx_btn + 1} ({invoice_btn.get('parsed_pdf_name', 'N/A')}) tiene campos incompletos o inválidos.")
+                        all_valid = False
                 
-                invoices_to_print = []
-                num_invoices_for_pdf = len([inv for inv in st.session_state.invoices_data if inv.get('recalculate_result')])
-                for invoice in st.session_state.invoices_data:
-                    if invoice.get('recalculate_result'):
-                        invoice['detraccion_monto'] = invoice.get('monto_total_factura', 0) - invoice.get('monto_neto_factura', 0)
-                        invoice['comision_de_estructuracion_global'] = st.session_state.comision_estructuracion_pct_global
-                        invoice['comision_minima_pen_global'] = st.session_state.comision_estructuracion_min_pen_global
-                        invoice['comision_minima_usd_global'] = st.session_state.comision_estructuracion_min_usd_global
-                        invoice['num_invoices'] = num_invoices_for_pdf
-                        invoices_to_print.append(invoice)
-
-                if invoices_to_print:
-                    try:
-                        pdf_bytes = pdf_generators.generate_perfil_operacion_pdf(invoices_to_print)
-                        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                        output_filename = f"perfiles_consolidados_{timestamp}.pdf"
-                        st.download_button(
-                            label=f"Descargar {output_filename}",
-                            data=pdf_bytes,
-                            file_name=output_filename,
-                            mime="application/pdf"
-                        )
-                    except Exception as e:
-                        st.error(f"Error al generar el PDF de perfiles: {e}")
+                if not all_valid:
+                    st.warning("No se pueden calcular todas las facturas. Por favor, revisa los errores mencionados arriba.")
                 else:
-                    st.warning("No hay perfiles calculados para imprimir.")
-            else:
-                st.warning("No hay resultados de cálculo para generar perfiles.")
-
-    if st.button("Generar Liquidacion cliente", disabled=not can_print_profiles):
-        if can_print_profiles:
-            st.write("Generando Reporte EFIDE...")
-            
-            invoices_to_print = []
-            num_invoices_for_pdf = len([inv for inv in st.session_state.invoices_data if inv.get('recalculate_result')])
-            for invoice in st.session_state.invoices_data:
-                if invoice.get('recalculate_result'):
-                    invoice['detraccion_monto'] = invoice.get('monto_total_factura', 0) - invoice.get('monto_neto_factura', 0)
-                    invoice['contract_number'] = st.session_state.get('contract_number', '')
-                    invoice['anexo_number'] = st.session_state.get('anexo_number', '')
-                    invoice['comision_de_estructuracion_global'] = st.session_state.comision_estructuracion_pct_global
-                    invoice['comision_minima_pen_global'] = st.session_state.comision_estructuracion_min_pen_global
-                    invoice['comision_minima_usd_global'] = st.session_state.comision_estructuracion_min_usd_global
-                    invoice['num_invoices'] = num_invoices_for_pdf
-                    invoices_to_print.append(invoice)
-
-            if invoices_to_print:
-                try:
-                    # --- INICIO DE LA CORRECCIÓN ---
-                    # Crear diccionario con datos del firmante
-                    signatory_data = {
-                        "name": "RAUL GUTIERREZ",
-                        "title": "Gerente General",
-                        "ruc": "20601935378"
-                    }
-                    # Pasar el segundo argumento requerido a la función
-                    pdf_bytes = pdf_generators.generate_efide_report_pdf(invoices_to_print, signatory_data)
-                    # --- FIN DE LA CORRECCIÓN ---
+                    st.success("Todas las facturas son válidas. Iniciando cálculos en lote...")
                     
-                    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                    output_filename = f"reporte_efide_{timestamp}.pdf"
-                    st.download_button(
-                        label=f"Descargar {output_filename}",
-                        data=pdf_bytes,
-                        file_name=output_filename,
-                        mime="application/pdf"
-                    )
-                except Exception as e:
-                    st.error(f"Error al generar el Reporte EFIDE: {e}")
-            else:
-                st.warning("No hay perfiles calculados para generar el Reporte EFIDE.")
-        else:
-            st.warning("No hay resultados de cálculo para generar el Reporte EFIDE.")
+                    lote_desembolso_payload = []
+                    num_invoices = len(st.session_state.invoices_data)
+                    
+                    for invoice_btn in st.session_state.invoices_data:
+                        comision_pen_apportioned = st.session_state.get('comision_afiliacion_pen_global', 0.0) / num_invoices if num_invoices > 0 else 0
+                        comision_usd_apportioned = st.session_state.get('comision_afiliacion_usd_global', 0.0) / num_invoices if num_invoices > 0 else 0
+                        comision_estructuracion_pct = st.session_state.comision_estructuracion_pct_global
+                        comision_min_pen_apportioned_struct = st.session_state.comision_estructuracion_min_pen_global / num_invoices if num_invoices > 0 else 0
+                        comision_min_usd_apportioned_struct = st.session_state.comision_estructuracion_min_usd_global / num_invoices if num_invoices > 0 else 0
+
+                        if invoice_btn['moneda_factura'] == 'USD':
+                            comision_minima_aplicable = comision_min_usd_apportioned_struct
+                            comision_afiliacion_aplicable = comision_usd_apportioned
+                        else:
+                            comision_minima_aplicable = comision_min_pen_apportioned_struct
+                            comision_afiliacion_aplicable = comision_pen_apportioned
+
+                        plazo_real = invoice_btn.get('plazo_operacion_calculado', 0)
+                        plazo_para_api = plazo_real
+                        if st.session_state.get('aplicar_dias_interes_minimo_global', False):
+                            dias_minimos_a_usar = invoice_btn.get('dias_minimos_interes_individual', 15)
+                            plazo_para_api = max(plazo_real, dias_minimos_a_usar)
+
+                        api_data = {
+                            "plazo_operacion": plazo_para_api,
+                            "mfn": invoice_btn['monto_neto_factura'],
+                            "tasa_avance": invoice_btn['tasa_de_avance'] / 100,
+                            "interes_mensual": invoice_btn['interes_mensual'] / 100,
+                            "interes_moratorio_mensual": invoice_btn['interes_moratorio'] / 100,
+                            "comision_estructuracion_pct": comision_estructuracion_pct / 100,
+                            "comision_minima_aplicable": comision_minima_aplicable,
+                            "igv_pct": 0.18,
+                            "comision_afiliacion_aplicable": comision_afiliacion_aplicable,
+                            "aplicar_comision_afiliacion": st.session_state.get('aplicar_comision_afiliacion_global', False)
+                        }
+                        lote_desembolso_payload.append(api_data)
+
+                    try:
+                        with st.spinner("Calculando desembolso inicial para todas las facturas..."):
+                            response = requests.post(f"{API_BASE_URL}/calcular_desembolso_lote", json=lote_desembolso_payload)
+                            response.raise_for_status()
+                            initial_calc_results_lote = response.json()
+
+                        if initial_calc_results_lote.get("error"):
+                            st.error(f"Error en el cálculo de desembolso en lote: {initial_calc_results_lote.get('error')}")
+                            st.stop()
+
+                        lote_encontrar_tasa_payload = []
+                        for idx_btn, invoice_btn in enumerate(st.session_state.invoices_data):
+                            invoice_btn['initial_calc_result'] = initial_calc_results_lote["resultados_por_factura"][idx_btn]
+                            
+                            if invoice_btn['initial_calc_result'] and 'abono_real_teorico' in invoice_btn['initial_calc_result']:
+                                abono_real_teorico = invoice_btn['initial_calc_result']['abono_real_teorico']
+                                monto_desembolsar_objetivo = (abono_real_teorico // 10) * 10
+
+                                api_data_recalculate = lote_desembolso_payload[idx_btn].copy()
+                                api_data_recalculate["monto_objetivo"] = monto_desembolsar_objetivo
+                                api_data_recalculate.pop("tasa_avance", None)
+                                
+                                lote_encontrar_tasa_payload.append(api_data_recalculate)
+                            else:
+                                invoice_btn['recalculate_result'] = None
+
+                        if lote_encontrar_tasa_payload:
+                            with st.spinner("Ajustando tasa de avance para todas las facturas..."):
+                                response_recalculate = requests.post(f"{API_BASE_URL}/encontrar_tasa_lote", json=lote_encontrar_tasa_payload)
+                                response_recalculate.raise_for_status()
+                                recalculate_results_lote = response_recalculate.json()
+
+                            if recalculate_results_lote.get("error"):
+                                st.error(f"Error en el ajuste de tasa en lote: {recalculate_results_lote.get('error')}")
+                                st.stop()
+                            
+                            for idx_btn, invoice_btn in enumerate(st.session_state.invoices_data):
+                                if idx_btn < len(recalculate_results_lote.get("resultados_por_factura", [])):
+                                    invoice_btn['recalculate_result'] = recalculate_results_lote["resultados_por_factura"][idx_btn]
+
+                        st.success("¡Cálculo de todas las facturas completado!")
+
+                    except requests.exceptions.RequestException as e:
+                        st.error(f"Error de conexión con la API: {e}")
+
+        with col2:
+            if st.button("GRABAR Propuesta", disabled=not can_save_proposal, help=COMMENT_GRABAR, use_container_width=True):
+                if can_save_proposal:
+                    anexo_number_str = st.session_state.anexo_number_global
+                    contract_number_str = st.session_state.contract_number_global
+                    timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+                    identificador_lote = f"LOTE-{contract_number_str}-{anexo_number_str}-{timestamp}"
+
+                    for idx_btn, invoice_btn in enumerate(st.session_state.invoices_data):
+                        if invoice_btn.get('recalculate_result'):
+                            with st.spinner(f"Guardando propuesta para Factura {idx_btn + 1}..."):
+                                anexo_number_int = int(anexo_number_str) if anexo_number_str else None
+                                contract_number_int = int(contract_number_str) if contract_number_str else None
+                                
+                                temp_session_data = {
+                                    'emisor_nombre': invoice_btn.get('emisor_nombre'),
+                                    'emisor_ruc': invoice_btn.get('emisor_ruc'),
+                                    'aceptante_nombre': invoice_btn.get('aceptante_nombre'),
+                                    'aceptante_ruc': invoice_btn.get('aceptante_ruc'),
+                                    'numero_factura': invoice_btn.get('numero_factura'),
+                                    'monto_total_factura': invoice_btn.get('monto_total_factura'),
+                                    'monto_neto_factura': invoice_btn.get('monto_neto_factura'),
+                                    'moneda_factura': invoice_btn.get('moneda_factura'),
+                                    'fecha_emision_factura': invoice_btn.get('fecha_emision_factura'),
+                                    'plazo_credito_dias': invoice_btn.get('plazo_credito_dias'),
+                                    'fecha_desembolso_factoring': invoice_btn.get('fecha_desembolso_factoring'),
+                                    'tasa_de_avance': invoice_btn.get('tasa_de_avance'),
+                                    'interes_mensual': invoice_btn.get('interes_mensual'),
+                                    'interes_moratorio': invoice_btn.get('interes_moratorio'),
+                                    'comision_de_estructuracion': invoice_btn.get('comision_de_estructuracion'),
+                                    'comision_minima_pen': invoice_btn.get('comision_minima_pen'),
+                                    'comision_minima_usd': invoice_btn.get('comision_minima_usd'),
+                                    'comision_afiliacion_pen': invoice_btn.get('comision_afiliacion_pen'),
+                                    'comision_afiliacion_usd': invoice_btn.get('comision_afiliacion_usd'),
+                                    'aplicar_comision_afiliacion': invoice_btn.get('aplicar_comision_afiliacion'),
+                                    'detraccion_porcentaje': invoice_btn.get('detraccion_porcentaje'),
+                                    'fecha_pago_calculada': invoice_btn.get('fecha_pago_calculada'),
+                                    'plazo_operacion_calculado': invoice_btn.get('plazo_operacion_calculado'),
+                                    'initial_calc_result': invoice_btn.get('initial_calc_result'),
+                                    'recalculate_result': invoice_btn.get('recalculate_result'),
+                                    'anexo_number': anexo_number_int,
+                                    'contract_number': contract_number_int,
+                                }
+                                success, message = db.save_proposal(temp_session_data, identificador_lote=identificador_lote)
+                                if success:
+                                    st.success(message)
+                                    if "Propuesta con ID" in message:
+                                        start_index = message.find("ID ") + 3
+                                        end_index = message.find(" guardada")
+                                        newly_saved_id = message[start_index:end_index]
+                                        invoice_btn['proposal_id'] = newly_saved_id
+                                        invoice_btn['identificador_lote'] = identificador_lote
+                                        st.session_state.last_saved_proposal_id = newly_saved_id
+
+                                        if 'accumulated_proposals' not in st.session_state:
+                                            st.session_state.accumulated_proposals = []
+                                        
+                                        full_proposal_details = db.get_proposal_details_by_id(newly_saved_id)
+                                        if full_proposal_details and 'proposal_id' in full_proposal_details:
+                                            if not any(p.get('proposal_id') == newly_saved_id for p in st.session_state.accumulated_proposals):
+                                                st.session_state.accumulated_proposals.append(full_proposal_details)
+                                                st.success(f"Propuesta {newly_saved_id} añadida a la lista de impresión.")
+                                else:
+                                    st.error(message)
+                    else:
+                        st.warning("No hay resultados de cálculo para guardar.")
+
+        with col3:
+            if st.button("Generar Perfil", disabled=not can_print_profiles, help=COMMENT_PERFIL, use_container_width=True):
+                if can_print_profiles:
+                    st.write("Generando PDF...")
+                    
+                    invoices_to_print = []
+                    num_invoices_for_pdf = len([inv for inv in st.session_state.invoices_data if inv.get('recalculate_result')])
+                    for invoice_btn in st.session_state.invoices_data:
+                        if invoice_btn.get('recalculate_result'):
+                            invoice_btn['detraccion_monto'] = invoice_btn.get('monto_total_factura', 0) - invoice_btn.get('monto_neto_factura', 0)
+                            invoice_btn['comision_de_estructuracion_global'] = st.session_state.comision_estructuracion_pct_global
+                            invoice_btn['comision_minima_pen_global'] = st.session_state.comision_estructuracion_min_pen_global
+                            invoice_btn['comision_minima_usd_global'] = st.session_state.comision_estructuracion_min_usd_global
+                            invoice_btn['num_invoices'] = num_invoices_for_pdf
+                            invoices_to_print.append(invoice_btn)
+
+                    if invoices_to_print:
+                        try:
+                            pdf_bytes = pdf_generators.generate_perfil_operacion_pdf(invoices_to_print)
+                            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                            output_filename = f"perfiles_consolidados_{timestamp}.pdf"
+                            st.download_button(
+                                label=f"Descargar {output_filename}",
+                                data=pdf_bytes,
+                                file_name=output_filename,
+                                mime="application/pdf"
+                            )
+                        except Exception as e:
+                            st.error(f"Error al generar el PDF de perfiles: {e}")
+                    else:
+                        st.warning("No hay perfiles calculados para imprimir.")
+                else:
+                    st.warning("No hay resultados de cálculo para generar perfiles.")
+
+        with col4:
+            if st.button("Generar Liquidación", disabled=not can_print_profiles, help=COMMENT_LIQUIDACION, use_container_width=True):
+                if can_print_profiles:
+                    st.write("Generando Reporte EFIDE...")
+                    
+                    invoices_to_print = []
+                    num_invoices_for_pdf = len([inv for inv in st.session_state.invoices_data if inv.get('recalculate_result')])
+                    for invoice_btn in st.session_state.invoices_data:
+                        if invoice_btn.get('recalculate_result'):
+                            invoice_btn['detraccion_monto'] = invoice_btn.get('monto_total_factura', 0) - invoice_btn.get('monto_neto_factura', 0)
+                            invoice_btn['contract_number'] = st.session_state.get('contract_number', '')
+                            invoice_btn['anexo_number'] = st.session_state.get('anexo_number', '')
+                            invoice_btn['comision_de_estructuracion_global'] = st.session_state.comision_estructuracion_pct_global
+                            invoice_btn['comision_minima_pen_global'] = st.session_state.comision_estructuracion_min_pen_global
+                            invoice_btn['comision_minima_usd_global'] = st.session_state.comision_estructuracion_min_usd_global
+                            invoice_btn['num_invoices'] = num_invoices_for_pdf
+                            invoices_to_print.append(invoice_btn)
+
+                    if invoices_to_print:
+                        try:
+                            # --- INICIO DE LA CORRECCIÓN ---
+                            # Crear diccionario con datos del firmante
+                            signatory_data = {
+                                "name": "RAUL GUTIERREZ",
+                                "title": "Gerente General",
+                                "ruc": "20601935378"
+                            }
+                            # Pasar el segundo argumento requerido a la función
+                            pdf_bytes = pdf_generators.generate_efide_report_pdf(invoices_to_print, signatory_data)
+                            # --- FIN DE LA CORRECCIÓN ---
+                            
+                            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                            output_filename = f"reporte_efide_{timestamp}.pdf"
+                            st.download_button(
+                                label=f"Descargar {output_filename}",
+                                data=pdf_bytes,
+                                file_name=output_filename,
+                                mime="application/pdf"
+                            )
+                        except Exception as e:
+                            st.error(f"Error al generar el Reporte EFIDE: {e}")
+                    else:
+                        st.warning("No hay perfiles calculados para generar el Reporte EFIDE.")
+                else:
+                    st.warning("No hay resultados de cálculo para generar el Reporte EFIDE.")
+        
+        st.markdown("---")
+        st.write("#### Descripción de las Acciones:")
+        st.markdown(f"""
+- **Calcular Facturas:** {COMMENT_CALCULAR}
+- **GRABAR Propuesta:** {COMMENT_GRABAR}
+- **Generar Perfil:** {COMMENT_PERFIL}
+- **Generar Liquidación:** {COMMENT_LIQUIDACION}
+""")
