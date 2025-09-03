@@ -575,35 +575,57 @@ if st.session_state.invoices_data:
                 detraccion_monto = monto_total - monto_neto
                 detraccion_pct = invoice.get('detraccion_porcentaje', 0)
                 
+                detalle_detraccion = f"`{monto_total:,.2f} - {monto_neto:,.2f} = {detraccion_monto:,.2f}`"
                 lines.append(f"| Monto Total de Factura | {monto_total:,.2f} | | `Dato de entrada` | Monto original de la factura con IGV |")
-                lines.append(f"| Detracción / Retención | {detraccion_monto:,.2f} | {detraccion_pct:.2f}% | `Monto Total - Monto Neto` | `{monto_total:,.2f} - {monto_neto:,.2f} = {detraccion_monto:,.2f}` |")
+                lines.append(f"| Detracción / Retención | {detraccion_monto:,.2f} | {detraccion_pct:.2f}% | `Monto Total - Monto Neto` | {detalle_detraccion} |")
 
                 lines.append(f"| Monto Neto de Factura | {monto_neto:,.2f} | 100.00% | `Dato de entrada` | Monto a financiar (después de detracciones/retenciones) |")
                 lines.append(f"| Tasa de Avance Aplicada | N/A | {tasa_avance_pct:.2f}% | `Tasa final de la operación` | N/A |")
-                lines.append(f"| Margen de Seguridad | {margen.get('monto', 0):,.2f} | {margen.get('porcentaje', 0):.2f}% | `Monto Neto - Capital` | `{monto_neto:,.2f} - {capital:,.2f} = {margen.get('monto', 0):,.2f}` |")
-                lines.append(f"| Capital | {capital:,.2f} | {((capital / monto_neto) * 100) if monto_neto else 0:.2f}% | `Monto Neto * (Tasa de Avance / 100)` | `{monto_neto:,.2f} * ({tasa_avance_pct:.2f} / 100) = {capital:,.2f}` |")
-                lines.append(f"| Intereses | {interes.get('monto', 0):,.2f} | {interes.get('porcentaje', 0):.2f}% | `Capital * ((1 + Tasa Diaria)^Plazo - 1)` | Tasa Diaria: `{invoice.get('interes_mensual', 0):.2f}% / 30 = {tasa_diaria_pct:.4f}%`, Plazo: `{calculos.get('plazo_operacion', 0)} días`. Cálculo: `{capital:,.2f} * ((1 + {tasa_diaria_pct/100:.6f})^{calculos.get('plazo_operacion', 0)} - 1) = {interes.get('monto', 0):,.2f}` |")
-                lines.append(f"| Comisión de Estructuración | {com_est.get('monto', 0):,.2f} | {com_est.get('porcentaje', 0):.2f}% | `MAX(Capital * %Comisión, Mínima Prorrateada)` | Base: `{capital:,.2f} * ({st.session_state.comision_estructuracion_pct_global:.2f} / 100) = {capital * (st.session_state.comision_estructuracion_pct_global/100):.2f}`, Mín Prorrateado: `{((st.session_state.comision_estructuracion_min_pen_global / len(st.session_state.invoices_data)) if moneda == 'PEN' else (st.session_state.comision_estructuracion_min_usd_global / len(st.session_state.invoices_data))):.2f}`. Resultado: `{com_est.get('monto', 0):,.2f}` |")
+                
+                detalle_margen = f"`{monto_neto:,.2f} - {capital:,.2f} = {margen.get('monto', 0):,.2f}`"
+                lines.append(f"| Margen de Seguridad | {margen.get('monto', 0):,.2f} | {margen.get('porcentaje', 0):.2f}% | `Monto Neto - Capital` | {detalle_margen} |")
+
+                detalle_capital = f"`{monto_neto:,.2f} * ({tasa_avance_pct:.2f} / 100) = {capital:,.2f}`"
+                lines.append(f"| Capital | {capital:,.2f} | {((capital / monto_neto) * 100) if monto_neto else 0:.2f}% | `Monto Neto * (Tasa de Avance / 100)` | {detalle_capital} |")
+
+                tasa_diaria_str = f"{invoice.get('interes_mensual', 0):.2f}% / 30 = {tasa_diaria_pct:.4f}%"
+                plazo_str = f"{calculos.get('plazo_operacion', 0)} días"
+                calculo_interes_str = f"{capital:,.2f} * ((1 + {tasa_diaria_pct/100:.6f})^{calculos.get('plazo_operacion', 0)} - 1) = {interes.get('monto', 0):,.2f}"
+                detalle_interes = f"Tasa Diaria: `{tasa_diaria_str}`, Plazo: `{plazo_str}`. Cálculo: `{calculo_interes_str}`"
+                lines.append(f"| Intereses | {interes.get('monto', 0):,.2f} | {interes.get('porcentaje', 0):.2f}% | `Capital * ((1 + Tasa Diaria)^Plazo - 1)` | {detalle_interes} |")
+
+                base_calc = f"{capital:,.2f} * ({st.session_state.comision_estructuracion_pct_global:.2f} / 100) = {capital * (st.session_state.comision_estructuracion_pct_global/100):.2f}"
+                min_prorrateado_val = ((st.session_state.comision_estructuracion_min_pen_global / len(st.session_state.invoices_data)) if moneda == 'PEN' else (st.session_state.comision_estructuracion_min_usd_global / len(st.session_state.invoices_data)))
+                min_prorrateado_str = f"{min_prorrateado_val:.2f}"
+                resultado_com_est = f"{com_est.get('monto', 0):,.2f}"
+                detalle_com_est = f"Base: `{base_calc}`, Mín Prorrateado: `{min_prorrateado_str}`. Resultado: `{resultado_com_est}`"
+                lines.append(f"| Comisión de Estructuración | {com_est.get('monto', 0):,.2f} | {com_est.get('porcentaje', 0):.2f}% | `MAX(Capital * %Comisión, Mínima Prorrateada)` | {detalle_com_est} |")
+                
                 if com_afi.get('monto', 0) > 0:
                     lines.append(f"| Comisión de Afiliación | {com_afi.get('monto', 0):,.2f} | {com_afi.get('porcentaje', 0):.2f}% | `Valor Fijo (si aplica)` | Monto fijo para la moneda {moneda}. |")
                 
                 igv_interes_monto = calculos.get('igv_interes', 0)
                 igv_interes_pct = (igv_interes_monto / monto_neto * 100) if monto_neto else 0
-                lines.append(f"| IGV sobre Intereses | {igv_interes_monto:,.2f} | {igv_interes_pct:.2f}% | `Intereses * 18%` | `{interes.get('monto', 0):,.2f} * 18% = {igv_interes_monto:,.2f}` |")
+                detalle_igv_interes = f"`{interes.get('monto', 0):,.2f} * 18% = {igv_interes_monto:,.2f}`"
+                lines.append(f"| IGV sobre Intereses | {igv_interes_monto:,.2f} | {igv_interes_pct:.2f}% | `Intereses * 18%` | {detalle_igv_interes} |")
 
                 igv_com_est_monto = calculos.get('igv_comision_estructuracion', 0)
                 igv_com_est_pct = (igv_com_est_monto / monto_neto * 100) if monto_neto else 0
-                lines.append(f"| IGV sobre Com. de Estruct. | {igv_com_est_monto:,.2f} | {igv_com_est_pct:.2f}% | `Comisión * 18%` | `{com_est.get('monto', 0):,.2f} * 18% = {igv_com_est_monto:,.2f}` |")
+                detalle_igv_com_est = f"`{com_est.get('monto', 0):,.2f} * 18% = {igv_com_est_monto:,.2f}`"
+                lines.append(f"| IGV sobre Com. de Estruct. | {igv_com_est_monto:,.2f} | {igv_com_est_pct:.2f}% | `Comisión * 18%` | {detalle_igv_com_est} |")
 
                 if com_afi.get('monto', 0) > 0:
                     igv_com_afi_monto = calculos.get('igv_afiliacion', 0)
                     igv_com_afi_pct = (igv_com_afi_monto / monto_neto * 100) if monto_neto else 0
-                    lines.append(f"| IGV sobre Com. de Afiliación | {igv_com_afi_monto:,.2f} | {igv_com_afi_pct:.2f}% | `Comisión * 18%` | `{com_afi.get('monto', 0):,.2f} * 18% = {igv_com_afi_monto:,.2f}` |")
+                    detalle_igv_com_afi = f"`{com_afi.get('monto', 0):,.2f} * 18% = {igv_com_afi_monto:,.2f}`"
+                    lines.append(f"| IGV sobre Com. de Afiliación | {igv_com_afi_monto:,.2f} | {igv_com_afi_pct:.2f}% | `Comisión * 18%` | {detalle_igv_com_afi} |")
 
                 lines.append("| | | | | |")
-                lines.append(f"| **Monto a Desembolsar** | **{abono.get('monto', 0):,.2f}** | **{abono.get('porcentaje', 0):.2f}%** | `Capital - Costos Totales` | `{capital:,.2f} - {costos_totales:,.2f} = {abono.get('monto', 0):,.2f}` |")
+                detalle_desembolso = f"`{capital:,.2f} - {costos_totales:,.2f} = {abono.get('monto', 0):,.2f}`"
+                lines.append(f"| **Monto a Desembolsar** | **{abono.get('monto', 0):,.2f}** | **{abono.get('porcentaje', 0):.2f}%** | `Capital - Costos Totales` | {detalle_desembolso} |")
                 lines.append("| | | | | |")
-                lines.append(f"| **Total (Monto Neto Factura)** | **{monto_neto:,.2f}** | **100.00%** | `Abono + Costos + Margen` | `{abono.get('monto', 0):,.2f} + {costos_totales:,.2f} + {margen.get('monto', 0):,.2f} = {monto_neto:,.2f}` |")
+                detalle_total = f"`{abono.get('monto', 0):,.2f} + {costos_totales:,.2f} + {margen.get('monto', 0):,.2f} = {monto_neto:,.2f}`"
+                lines.append(f"| **Total (Monto Neto Factura)** | **{monto_neto:,.2f}** | **100.00%** | `Abono + Costos + Margen` | {detalle_total} |")
                 
                 tabla_md = "\n".join(lines)
                 st.markdown(tabla_md, unsafe_allow_html=True)
