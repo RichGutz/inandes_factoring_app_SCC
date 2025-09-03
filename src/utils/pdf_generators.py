@@ -37,7 +37,7 @@ def _generate_pdf_in_memory(
 
         html_out = template.render(template_data)
         
-        base_url = templates_dir
+        base_url = project_root
         return HTML(string=html_out, base_url=base_url).write_pdf()
         
     except Exception as e:
