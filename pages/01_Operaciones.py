@@ -219,10 +219,7 @@ if 'aplicar_interes_moratorio_global' not in st.session_state: st.session_state.
 if 'interes_moratorio_global' not in st.session_state: st.session_state.interes_moratorio_global = st.session_state.default_interes_moratorio
 
 # --- UI: Título y CSS ---
-st.markdown("<style>\n[data-testid=\"stHorizontalBlock\"] { 
-    align-items: flex-start; 
-}
-</style>", unsafe_allow_html=True)
+st.markdown("<style>\n[data-testid=\"stHorizontalBlock\"] { \n    align-items: flex-start; \n}\n</style>", unsafe_allow_html=True)
 
 st.markdown("""
 <style>
@@ -725,7 +722,6 @@ if st.session_state.invoices_data:
 
                 except requests.exceptions.RequestException as e:
                     st.error(f"Error de conexión con la API: {e}")
-                st.rerun()
 
     with col2:
         if st.button("GRABAR Propuesta", disabled=not can_save_proposal, help=COMMENT_GRABAR, use_container_width=True):
