@@ -629,7 +629,7 @@ if st.session_state.invoices_data:
         col1, col2, col3, col4 = st.columns(4)
 
         with col1:
-            if st.button("Calcular Facturas", key="calculate_all_invoices", help=COMMENT_CALCULAR, type="secondary", use_container_width=True):
+            if st.button("Calcular Facturas", key="calculate_all_invoices", help=COMMENT_CALCULAR, type="secondary", class_name="red-button", use_container_width=True):
                 all_valid = True
                 for idx_btn, invoice_btn in enumerate(st.session_state.invoices_data):
                     if not validate_inputs(invoice_btn):
