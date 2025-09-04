@@ -11,7 +11,7 @@ Esta sección documenta los errores comunes encontrados durante el proceso de de
 
 ### 9.2. `streamlit.errors.StreamlitAPIException: Could not find page: apps/01_Operaciones.py`
 
-*   **Causa:** Estructura incorrecta de la aplicación multi-página de Streamlit y rutas incorrectas en `st.switch_page()`. Streamlit espera las páginas en una carpeta `pages/`.
+*   **Causa:** Estructura incorrecta de la aplicación multi-página de Streamlit y rutas incorrectas en `st.switch_page()`.
 *   **Solución:**
     *   Mover todos los archivos de página de `apps/` a `apps/pages/`.
     *   Actualizar las llamadas a `st.switch_page()` en `00_Home.py` para que referencien las páginas solo por su nombre de archivo (ej. `st.switch_page(f"{page_name}.py")`).
@@ -103,3 +103,52 @@ Se realizó un proceso de depuración exhaustivo para un redespliegue desde cero
 *   **Síntoma:** La aplicación fallaba con un `KeyError` en la línea `invoice['initial_calc_result'] = initial_calc_results_lote["resultados_por_factura"][idx]` dentro de `pages/01_Operaciones.py`, incluso después de que la API devolviera un código de estado 200 (OK).
 *   **Causa:** La respuesta de la API del backend (en `src/api/main.py`) estaba anidando la respuesta del módulo de cálculo dentro de otro diccionario. En lugar de devolver `{"resultados_por_factura": [...]}` directamente, devolvía `{"resultados_por_factura": {"resultados_por_factura": [...]}}`. Este anidamiento extra causaba que el frontend no encontrara la clave en el primer nivel del diccionario de respuesta. El mismo error existía en los endpoints `/calcular_desembolso_lote` y `/encontrar_tasa_lote`.
 *   **Solución:** Se modificaron los endpoints afectados en `src/api/main.py` para que devolvieran directamente el resultado del módulo de cálculo (`return result`) en lugar de anidarlo en un nuevo diccionario (`return {"resultados_por_factura": result}`). Esto aplanó la estructura de la respuesta JSON para que coincidiera con lo que el frontend esperaba.
+
+---
+
+## Como desarrollar en local mientras se mantiene la app en Streamlit community cloud
+
+Esta guía consolida los pasos necesarios para configurar y ejecutar el frontend de la aplicación Streamlit en un entorno de desarrollo local (Windows), mientras se conecta a los servicios de backend (Render) y base de datos (Supabase) que están en producción en la nube.
+
+### 1. Configuración de Prerrequisitos (Tareas Únicas)
+
+Antes de poder ejecutar la aplicación localmente, es necesario asegurarse de que los servicios externos permitan la conexión desde `localhost`.
+
+*   **Google Cloud Console:** El servicio de autenticación de Google (OAuth 2.0) debe confiar en la URL de desarrollo local. 
+    1.  Ve a la página de [Credenciales de Google Cloud](https://console.cloud.google.com/apis/credentials).
+    2.  Busca y edita el "ID de cliente de OAuth 2.0" correspondiente a esta aplicación.
+    3.  En la sección "URIs de redireccionamiento autorizados", añade la siguiente URL exactamente como se muestra: `http://localhost:8504`.
+    4.  Guarda los cambios.
+
+*   **Código Fuente:** El código de la aplicación ya está preparado para manejar dinámicamente los diferentes entornos (local vs. nube) para las URLs de la API y de redirección de Google.
+
+### 2. Pasos para la Ejecución Local (Cada vez que se desarrolla)
+
+Sigue esta secuencia cada vez que abras una nueva terminal para trabajar en el proyecto.
+
+1.  **Abrir Terminal:** Inicia una nueva ventana del Símbolo del sistema (`cmd.exe`).
+
+2.  **Navegar al Directorio del Proyecto:**
+    ```bash
+    cd C:\Users\rguti\inandes_factoring_app_SCC
+    ```
+
+3.  **Establecer Variables de Entorno:** Ejecuta los siguientes tres comandos para configurar las credenciales necesarias para la sesión actual de la terminal. **Importante: Los valores se ponen sin comillas.**
+
+    *   **Para el Backend:**
+        ```bash
+        set BACKEND_API_URL=URL_DE_TU_BACKEND_EN_RENDER
+        ```
+
+    *   **Para la Base de Datos (Supabase):**
+        ```bash
+        set SUPABASE_URL=URL_DE_TU_PROYECTO_SUPABASE
+        set SUPABASE_KEY=LLAVE_PUBLICA_ANON_DE_SUPABASE
+        ```
+
+4.  **Lanzar la Aplicación:** Usa el siguiente comando para iniciar el servidor de Streamlit, especificando el puerto correcto que autorizaste en Google Cloud.
+    ```bash
+    streamlit run 00_Home.py --server.port 8504
+    ```
+
+Si todos los pasos se han seguido correctamente, la aplicación se abrirá en tu navegador en `http://localhost:8504` y debería ser completamente funcional, permitiéndote iniciar sesión y utilizar todos los módulos que se conectan a los servicios en la nube.

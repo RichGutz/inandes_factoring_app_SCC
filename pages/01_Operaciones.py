@@ -731,6 +731,7 @@ if st.session_state.invoices_data:
                                 invoice_btn['recalculate_result'] = recalculate_results_lote["resultados_por_factura"][idx_btn]
 
                     st.success("¡Cálculo de todas las facturas completado!")
+                    st.rerun()
 
                 except requests.exceptions.RequestException as e:
                     st.error(f"Error de conexión con la API: {e}")
