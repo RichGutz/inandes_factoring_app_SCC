@@ -55,8 +55,8 @@
             padding: 4px;
             text-align: center;
         }
-        .main-table th {
-            background-color: #e0e0e0;
+                .main-table th {
+            background-color: white;
         }
         .main-table .text-right {
             text-align: right;
@@ -115,27 +115,26 @@
 </head>
 <body>
 
-    <div class="header" style="align-items: center;">
-        <h3 style="text-align: left; margin-top: 10px; font-size: 16px;">LIQUIDACION ADELANTO OPERACIÓN FACTORING</h3>
-        <div style="flex-grow: 1;"></div>
-        <div style="text-align: right;">
-            <div style="font-size: 9px; margin-bottom: 5px;">
-                Fecha: {{ print_date.strftime("%d/%m/%y") }}<br>
-                Hora: {{ print_date.strftime("%H:%M:%S") }}<br>
-                Pagina: 1
-            </div>
-            <div class="logo">
-                <img src="file:///C:/Users/rguti/Inandes.TECH/inputs_para_generated_pdfs/LOGO.png" alt="Client Logo" style="max-width: 150px; height: auto;">
-            </div>
+    <div class="header" style="display: flex; align-items: center; width: 100%;">
+        <!-- Izquierda: Logo -->
+        <div style="width: 33.3%; text-align: left;">
+            <img src="file:///C:/Users/rguti/inandes_factoring_app_SCC/static/logo_inandes.png" alt="Inandes Logo" style="max-width: 150px; height: auto;">
+        </div>
+        
+        <!-- Centro: Título -->
+        <div style="width: 33.3%; text-align: center;">
+            <h3 style="margin: 0; font-size: 16px;">ANEXO N° {{ main_invoice.contract_number }}-{{ main_invoice.anexo_number }}</h3>
+        </div>
+    
+        <!-- Derecha: Info de Fecha/Hora -->
+        <div style="width: 33.3%; text-align: right; font-size: 9px;">
+            Fecha: {{ print_date.strftime("%d/%m/%y") }}<br>
+            Hora: {{ print_date.strftime("%H:%M:%S") }}<br>
+            Pagina: 1
         </div>
     </div>
 
-    <div style="margin-top: 15px; padding: 0; font-size: 11px; line-height: 1.5;">
-        <strong>Señores:</strong> INANDES FACTOR CAPITAL SAC<br>
-        <strong>Presente .-</strong><br><br>
-        Nuestra empresa <strong>{{ main_invoice.emisor_nombre }}</strong> identificada con RUC N° <strong>{{ main_invoice.emisor_ruc }}</strong> adjuntamos los documentos detallados a continuación para proceder al correspondiente Factoring.<br>
-        Solicitamos el MONTO A DESEMBOLSAR, se deposite en el banco <strong>BANCO CONTINENTAL</strong> Cta/CCI N° <strong>001107130100030442</strong> en la misma moneda liquidada.
-    </div>
+    
 
     <table style="width: 100%; border-collapse: collapse; border: none; margin-top: 15px; font-size: 10px;">
         <tr style="vertical-align: top;">
