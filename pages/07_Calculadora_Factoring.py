@@ -15,8 +15,20 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 # --- Module Imports from `src` ---
 from src.utils import pdf_generators
 
-# --- Configuración Inicial ---
-API_BASE_URL = st.secrets["backend_api"]["url"]
+# --- Estrategia Unificada para la URL del Backend ---
+
+# 1. Intenta leer la URL desde una variable de entorno local (para desarrollo).
+#    Esta es la que usarás para apuntar a Render desde tu máquina.
+API_BASE_URL = os.getenv("BACKEND_API_URL")
+
+# 2. Si no la encuentra, intenta leerla desde los secretos de Streamlit (para la nube).
+if not API_BASE_URL:
+    try:
+        API_BASE_URL = st.secrets["backend_api"]["url"]
+    except (KeyError, AttributeError):
+        # 3. Si todo falla, muestra un error claro.
+        st.error("La URL del backend no está configurada. Define BACKEND_API_URL o configúrala en st.secrets.")
+        st.stop() # Detiene la ejecución si no hay URL
 
 st.set_page_config(
     layout="wide",
@@ -705,3 +717,11 @@ if st.session_state.invoices_data:
                     st.warning("No hay perfiles calculados para imprimir.")
             else:
                 st.warning("No hay resultados de cálculo para generar perfiles.")
+
+
+    st.markdown("---")
+    st.write("#### Limpiar y Reiniciar")
+    if st.button("Limpiar Todo"):
+        st.session_state.invoices_data = []
+        st.session_state.num_invoices_to_simulate = 1
+        st.rerun()

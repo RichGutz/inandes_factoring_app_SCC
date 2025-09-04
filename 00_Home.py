@@ -1,11 +1,12 @@
 import sys
 import os
 # --- PATH SETUP ---
-# Add the 'src' directory to the Python path to recognize modules
-project_root = os.path.dirname(__file__)
-src_path = os.path.join(project_root, 'src')
-if src_path not in sys.path:
-    sys.path.append(src_path)
+# Add the project root to the Python path. This allows absolute imports from 'src'.
+project_root = os.path.dirname(os.path.abspath(__file__))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+# Now imports like `from src.services import ...` will work from any script.
 
 import streamlit as st
 
@@ -35,7 +36,16 @@ REVOKE_URL = "https://oauth2.googleapis.com/revoke"
 credentials = st.secrets['google_oauth']
 client_id = credentials['client_id']
 client_secret = credentials['client_secret']
-redirect_uri = credentials['redirect_uri']
+
+# --- Lógica de Redirección Dinámica ---
+# Si st.secrets tiene una URI, úsala (para la nube). Si no, usa la local.
+try:
+    # This will be used in the cloud
+    redirect_uri = credentials['redirect_uri']
+except KeyError:
+    # This will be used for local development
+    redirect_uri = "http://localhost:8504"
+
 # authorized_users = credentials['authorized_users'] # No longer needed, managed by Supabase
 
 # 2. Check if user is authenticated

@@ -1,0 +1,40 @@
+Instrucciones para lanzar en local:
+
+
+cd C:\Users\rguti\inandes_factoring_app_SCC
+
+cd C:\Users\rguti\inandes_factoring_app_SCC\pages
+
+
+Configurar la URL del BACK:
+
+FONDO AZUL    $env:BACKEND_API_URL="https://inandes-back.onrender.com"   
+FONDO NEGRO   
+
+set BACKEND_API_URL=https://inandes-back.onrender.com  
+set SUPABASE_URL=https://bqyouppbgylodvdbctcf.supabase.co
+set SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxeW91cHBiZ3lsb2R2ZGJjdGNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5Mjk3MTcsImV4cCI6MjA2OTUwNTcxN30.cXRXV4Owm7nSQheyWHvjVxfE8mmuRGECxm6Pm3RSR4k
+
+
+
+Lanzar el app
+
+streamlit run 00_Home.py --server.port 8504
+
+streamlit run 01_Operaciones.py
+
+
+
+
+
+
+
+GOOGLE CLOUD CONSOLE USUARIO RICH@KAIZENCAPITAL.PE
+
+https://console.cloud.google.com/apis/credentials?authuser=1&project=norse-feat-470703-u0
+
+Authorized JavaScript origins & Authorized redirect URIs
+
+http://localhost:8504
+
+https://inandesfactoringappscc-b9kgcfll5tleybysvbg9xn.streamlit.app

@@ -16,8 +16,20 @@ from src.utils.pdf_generators import generate_lote_report_pdf
 # --- Module Imports from `src` ---
 from src.data import supabase_repository as db
 
-# --- Constantes ---
-API_BASE_URL = "http://127.0.0.1:8000"
+# --- Estrategia Unificada para la URL del Backend ---
+
+# 1. Intenta leer la URL desde una variable de entorno local (para desarrollo).
+#    Esta es la que usarás para apuntar a Render desde tu máquina.
+API_BASE_URL = os.getenv("BACKEND_API_URL")
+
+# 2. Si no la encuentra, intenta leerla desde los secretos de Streamlit (para la nube).
+if not API_BASE_URL:
+    try:
+        API_BASE_URL = st.secrets["backend_api"]["url"]
+    except (KeyError, AttributeError):
+        # 3. Si todo falla, muestra un error claro.
+        st.error("La URL del backend no está configurada. Define BACKEND_API_URL o configúrala en st.secrets.")
+        st.stop() # Detiene la ejecución si no hay URL
 
 # --- Configuración de la Página ---
 st.set_page_config(
@@ -518,11 +530,11 @@ def mostrar_liquidacion():
 
 
 # --- UI: Título y CSS ---
-st.markdown("""<style>
+st.markdown("<style>
 [data-testid=\"stHorizontalBlock\"] { 
     align-items: center; 
 }
-</style>""", unsafe_allow_html=True)
+</style>", unsafe_allow_html=True)
 
 col1, col2, col3 = st.columns([0.25, 0.5, 0.25])
 with col1:
