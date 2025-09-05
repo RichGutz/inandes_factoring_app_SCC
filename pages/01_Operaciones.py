@@ -254,7 +254,7 @@ COMMENT_PERFIL = "Genere el perfil completo de la operación sin haber subido a 
 COMMENT_LIQUIDACION = "Una vez registrada la operación en base de datos, genere el reporte de liquidación para el cliente."
 
 
-col1, col2, col3 = st.columns([0.25, 0.5, 0.25])
+col1, col2, col3 = st.columns([0.25, 0.5, 0.25], vertical_alignment="center")
 with col1:
     st.image(os.path.join(project_root, "static", "logo_geek.png"), width=200)
 with col2:

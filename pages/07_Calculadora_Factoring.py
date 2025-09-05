@@ -196,7 +196,7 @@ if 'interes_mensual_global' not in st.session_state: st.session_state.interes_me
 # --- UI: Título y CSS ---
 st.markdown("<style>\n[data-testid=\"stHorizontalBlock\"] { \n    align-items: flex-start; \n}\n</style>", unsafe_allow_html=True)
 
-col1, col2, col3 = st.columns([0.25, 0.5, 0.25])
+col1, col2, col3 = st.columns([0.25, 0.5, 0.25], vertical_alignment="center")
 with col1:
     st.image(os.path.join(project_root, "static", "logo_geek.png"), width=200)
 with col2:
