@@ -17,6 +17,7 @@ from core.factoring_calculator import (
     procesar_lote_desembolso_inicial,
     procesar_lote_encontrar_tasa
 )
+from data import supabase_repository as db
 from data.supabase_repository import (
     get_or_create_desembolso_resumen,
     add_desembolso_evento,
