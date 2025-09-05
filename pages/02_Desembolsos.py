@@ -223,14 +223,19 @@ def mostrar_desembolso():
         
         resultados = st.session_state.resultados_desembolso_lote.get('resultados_del_lote', [])
         if resultados:
-            for res in resultados:
-                status = res.get('status', 'ERROR')
-                message = res.get('message', 'No hay mensaje.')
-                pid = res.get('proposal_id', 'N/A')
-                if status == 'SUCCESS':
-                    st.success(f"✅ Factura {parse_invoice_number(pid)}: {message}")
-                else:
-                    st.error(f"❌ Factura {parse_invoice_number(pid)}: {message}")
+            with st.spinner("Actualizando estados en la base de datos..."):
+                for res in resultados:
+                    status = res.get('status', 'ERROR')
+                    message = res.get('message', 'No hay mensaje.')
+                    pid = res.get('proposal_id', 'N/A')
+                    if status == 'SUCCESS':
+                        try:
+                            db.update_proposal_status(pid, 'DESEMBOLSADA')
+                            st.success(f"✅ Factura {parse_invoice_number(pid)}: {message}. Estado actualizado a DESEMBOLSADA.")
+                        except Exception as e:
+                            st.error(f"❌ Factura {parse_invoice_number(pid)}: {message}. Error al actualizar estado: {e}")
+                    else:
+                        st.error(f"❌ Factura {parse_invoice_number(pid)}: {message}")
         else:
             st.warning("La API no devolvió resultados para el lote.")
 
