@@ -222,20 +222,40 @@ def mostrar_desembolso():
         st.header("Paso 4: Resultados del Procesamiento")
         
         resultados = st.session_state.resultados_desembolso_lote.get('resultados_del_lote', [])
+        
+        success_count = 0
+        error_count = 0
+
         if resultados:
-            with st.spinner("Actualizando estados en la base de datos..."):
-                for res in resultados:
-                    status = res.get('status', 'ERROR')
-                    message = res.get('message', 'No hay mensaje.')
-                    pid = res.get('proposal_id', 'N/A')
-                    if status == 'SUCCESS':
-                        try:
-                            db.update_proposal_status(pid, 'DESEMBOLSADA')
-                            st.toast(f"✅ Factura {parse_invoice_number(pid)}: {message}. Estado actualizado a DESEMBOLSADA.")
-                        except Exception as e:
-                            st.error(f"❌ Factura {parse_invoice_number(pid)}: {message}. Error al actualizar estado: {e}")
-                    else:
-                        st.error(f"❌ Factura {parse_invoice_number(pid)}: {message}")
+            st.subheader("Detalle de la Respuesta de la API:")
+            st.dataframe(resultados) # Display the raw API response in a dataframe
+
+            # Removed the spinner here
+            for res in resultados:
+                status = res.get('status', 'ERROR')
+                message = res.get('message', 'No hay mensaje.')
+                pid = res.get('proposal_id', 'N/A')
+                
+                # Changed st.info to st.write for persistence
+                st.write(f"API Response for Factura {parse_invoice_number(pid)}: Status={status}, Message={message}")
+
+                if status == 'SUCCESS':
+                    try:
+                        db.update_proposal_status(pid, 'DESEMBOLSADA')
+                        st.toast(f"✅ Factura {parse_invoice_number(pid)}: {message}. Estado actualizado a DESEMBOLSADA.")
+                        success_count += 1
+                    except Exception as e:
+                        st.error(f"❌ Factura {parse_invoice_number(pid)}: {message}. Error al actualizar estado: {e}")
+                        error_count += 1
+                else:
+                    st.error(f"❌ Factura {parse_invoice_number(pid)}: {message}")
+                    error_count += 1
+            
+            if success_count > 0:
+                st.success(f"✅ Se actualizaron {success_count} facturas a DESEMBOLSADA.")
+            if error_count > 0:
+                st.error(f"❌ Hubo errores al procesar {error_count} facturas. Por favor, revisa los detalles anteriores.")
+
         else:
             st.warning("La API no devolvió resultados para el lote.")
 

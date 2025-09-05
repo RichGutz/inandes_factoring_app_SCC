@@ -10,7 +10,7 @@ from typing import Optional, List, Dict, Any
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 sys.path.insert(0, project_root)
 
-from core.liquidation_calculator import calcular_liquidacion
+from core.liquidation_calculator import calcular_liquidacion, proyectar_saldo_diario
 from data.supabase_repository import (
     get_proposal_details_by_id,
     get_or_create_liquidacion_resumen,
@@ -195,3 +195,38 @@ async def simular_liquidacion_lote_endpoint(request: ProcesarLiquidacionRequest)
             resultados.append({"proposal_id": proposal_id, "status": "ERROR", "message": str(e)})
     
     return {"resultados_del_lote": resultados}
+
+@router.post("/get_projected_balance")
+async def get_projected_balance_endpoint(request: GetProjectedBalanceRequest):
+    try:
+        # 1. Obtener detalles de la propuesta
+        proposal_details = get_proposal_details_by_id(request.proposal_id)
+        if not proposal_details:
+            raise HTTPException(status_code=404, detail="Proposal not found")
+
+        # 2. Extraer tasas de interés
+        interes_compensatorio = proposal_details.get('interes_mensual')
+        interes_moratorio = proposal_details.get('interes_moratorio')
+        if interes_compensatorio is None or interes_moratorio is None:
+            raise HTTPException(status_code=400, detail="Tasas de interés no encontradas en la propuesta.")
+
+        # 3. Validar y convertir fecha
+        try:
+            fecha_inicio = datetime.fromisoformat(request.fecha_inicio_proyeccion.split('+')[0]).date()
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Formato de fecha inválido. Use ISO format.")
+
+        # 4. Llamar a la función de proyección
+        proyeccion = proyectar_saldo_diario(
+            capital_inicial=request.initial_capital,
+            fecha_inicio=fecha_inicio,
+            tasa_compensatoria_mensual=interes_compensatorio,
+            tasa_moratoria_mensual=interes_moratorio,
+            dias_proyeccion=30  # Proyectar por 30 días por defecto
+        )
+
+        return {"proyeccion_futura": proyeccion}
+
+    except Exception as e:
+        # Log the exception details here if you have a logger
+        raise HTTPException(status_code=500, detail=str(e))

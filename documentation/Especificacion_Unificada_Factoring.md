@@ -38,7 +38,7 @@ Esta sección documenta los errores comunes encontrados durante el proceso de de
 *   **Descripción:** A pesar de haber aplicado la corrección del `Path Setup` (`project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))`) en todos los archivos de `apps/pages/`, y de haber verificado que el código correcto está en GitHub, este error sigue apareciendo al navegar a las páginas secundarias en Streamlit Cloud.
 *   **Estado:** **SIN RESOLVER.** Este problema sugiere una interacción compleja o un comportamiento inesperado del entorno de Streamlit Cloud con la gestión de rutas de Python en aplicaciones multi-página cuando los archivos de página están en una sub-subcarpeta (`apps/pages/`). Se requiere una investigación adicional o una solución alternativa para la gestión de rutas en los archivos de página.
 
----
+--- 
 
 ## 9.7. Troubleshooting de Despliegue Completo (Sept 2025)
 
@@ -104,7 +104,7 @@ Se realizó un proceso de depuración exhaustivo para un redespliegue desde cero
 *   **Causa:** La respuesta de la API del backend (en `src/api/main.py`) estaba anidando la respuesta del módulo de cálculo dentro de otro diccionario. En lugar de devolver `{"resultados_por_factura": [...]}` directamente, devolvía `{"resultados_por_factura": {"resultados_por_factura": [...]}}`. Este anidamiento extra causaba que el frontend no encontrara la clave en el primer nivel del diccionario de respuesta. El mismo error existía en los endpoints `/calcular_desembolso_lote` y `/encontrar_tasa_lote`.
 *   **Solución:** Se modificaron los endpoints afectados en `src/api/main.py` para que devolvieran directamente el resultado del módulo de cálculo (`return result`) en lugar de anidarlo en un nuevo diccionario (`return {"resultados_por_factura": result}`). Esto aplanó la estructura de la respuesta JSON para que coincidiera con lo que el frontend esperaba.
 
----
+--- 
 
 ## Como desarrollar en local mientras se mantiene la app en Streamlit community cloud
 
@@ -151,4 +151,47 @@ Sigue esta secuencia cada vez que abras una nueva terminal para trabajar en el p
     streamlit run 00_Home.py --server.port 8504
     ```
 
-Si todos los pasos se han seguido correctamente, la aplicación se abrirá en tu navegador en `http://localhost:8504` y debería ser completamente funcional, permitiéndote iniciar sesión y utilizar todos los módulos que se conectan a los servicios en la nube.
+Si todos los pasos se han seguido correctamente, la aplicación se abrirá en tu navegador en `http://localhost:8504` y debería ser completamente funcional, permitiéndote iniciar sesión y utilizar todos los módulos que se conectan a los servicios en la nube。
+
+--- 
+
+## 9.7.13. Problema: Cambio de Estado de Facturas (ACTIVO a DESEMBOLSADA)
+
+*   **Síntoma:** Las facturas no cambiaban de estado de 'ACTIVO' a 'DESEMBOLSADA' después de un desembolso exitoso, a pesar de que el frontend mostraba un mensaje de "Lote procesado por la API".
+*   **Diagnóstico Inicial:**
+    *   El frontend (`pages/02_Desembolsos.py`) no realizaba directamente el cambio de estado en la base de datos.
+    *   La lógica de cambio de estado residía en el backend, pero el endpoint `/desembolsar_lote` en `src/api/main.py` estaba vacío (`pass`).
+*   **Soluciones Implementadas:**
+    *   **Implementación del Endpoint `/desembolsar_lote`:** Se añadió la lógica necesaria en `src/api/main.py` para que este endpoint:
+        *   Itere sobre las facturas recibidas.
+        *   Actualice el estado de cada `proposal_id` a 'DESEMBOLSADA' utilizando `db.update_proposal_status()`.
+        *   Registre un evento de auditoría (`db.add_audit_event`) para cada cambio de estado.
+        *   Devuelva una respuesta estructurada al frontend con el estado de cada factura procesada.
+    *   **Corrección de Importación `db`:** Se ajustó la importación de `supabase_repository` en `src/api/main.py` para que el objeto `db` fuera accesible dentro del endpoint.
+    *   **Mejoras en Mensajes de Frontend:**
+        *   Se cambió `st.success` a `st.toast` para mensajes individuales de éxito en `pages/02_Desembolsos.py` para una notificación menos intrusiva.
+        *   Se añadió un mensaje de resumen final (`st.success` o `st.error`) en `pages/02_Desembolsos.py` para consolidar el resultado del procesamiento del lote.
+        *   Se corrigió un error de formato en la f-string de los mensajes de depuración en `pages/02_Desembolsos.py` para que mostraran correctamente los valores de `status` y `message` de `API`.
+
+--- 
+
+## 9.7.14. Problema: Proyección de Deuda (404 Client Error: Not Found para `/get_projected_balance`)
+
+*   **Síntoma:** Al intentar acceder a la proyección de deuda en el módulo de Liquidación, la aplicación mostraba un error `404 Client Error: Not Found` para la URL `https://inandes-back.onrender.com/get_projected_balance`.
+*   **Diagnóstico:** El endpoint `/get_projected_balance` no estaba definido en el archivo `src/api/main.py` del backend.
+*   **Soluciones Implementadas (o en Proceso):**
+    *   **Implementación del Endpoint `/get_projected_balance`:** Se añadió la lógica para este endpoint en el backend. Este endpoint:
+        *   Recibe `proposal_id`, `fecha_inicio_proyeccion` y `initial_capital`.
+        *   Obtiene las tasas de interés (`interes_mensual`, `interes_moratorio`) de los detalles de la propuesta.
+        *   Llama a la función `proyectar_saldo_diario` de `core.liquidation_calculator` para calcular la proyección.
+        *   Devuelve la proyección futura.
+    *   **Reubicación del Endpoint:** Para una mejor organización y evitar conflictos, se decidió mover el endpoint `/get_projected_balance` del `main.py` al router de `liquidaciones` (`src/api/routers/liquidaciones.py`). Esto significa que la URL correcta para este endpoint ahora es `/liquidaciones/get_projected_balance`.
+    *   **Actualización del Frontend:** Se actualizó la llamada en `pages/03_Liquidaciones.py` para que apunte a la nueva URL del endpoint (`/liquidaciones/get_projected_balance`).
+
+--- 
+
+## Tareas Pendientes
+
+*   **Verificación de Proyección de Deuda:** Confirmar que el endpoint `/liquidaciones/get_projected_balance` funciona correctamente después de su reubicación y la actualización del frontend.
+*   **Verificación de Cambio de Estado (Desembolso):** Confirmar que el estado de las facturas cambia de 'ACTIVO' a 'DESEMBOLSADA' después de un desembolso exitoso.
+*   **Verificación de Cambio de Estado (Liquidación):** Confirmar que los cambios de estado de liquidación (`'LIQUIDADA'` o `'EN PROCESO DE LIQUIDACION'`) se aplican correctamente en la base de datos después de procesar una liquidación.

@@ -51,11 +51,6 @@ class DesembolsarLoteRequest(BaseModel):
     usuario_id: str
     desembolsos: List[DesembolsoInfo]
 
-class GetProjectedBalanceRequest(BaseModel):
-    proposal_id: str
-    fecha_inicio_proyeccion: str # Format 'YYYY-MM-DD' from ISO format
-    initial_capital: float
-
 # --- Endpoints de Gestión de Estado ---
 
 @app.post("/desembolsar_lote")

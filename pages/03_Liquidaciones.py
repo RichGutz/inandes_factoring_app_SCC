@@ -59,7 +59,6 @@ if 'individual_proof_files' not in st.session_state: st.session_state.individual
  
 
 
-
 # --- Funciones de Ayuda ---
 def parse_invoice_number(proposal_id: str) -> str:
     try:
@@ -181,7 +180,7 @@ def _display_forecast_table_batch(proposal_id, fecha_inicio_proyeccion, initial_
     st.markdown("**Proyección de Deuda Post-Pago (Interés Compuesto Diario)**")
     payload = {"proposal_id": proposal_id, "fecha_inicio_proyeccion": fecha_inicio_proyeccion, "initial_capital": initial_capital}
     try:
-        response = requests.post(f"{API_BASE_URL}/get_projected_balance", json=payload)
+        response = requests.post(f"{API_BASE_URL}/liquidaciones/get_projected_balance", json=payload)
         response.raise_for_status()
         forecast_data = response.json()
         if forecast_data.get('error') or not forecast_data.get('proyeccion_futura'):
