@@ -54,8 +54,28 @@ class DesembolsarLoteRequest(BaseModel):
 
 @app.post("/desembolsar_lote")
 async def desembolsar_lote_endpoint(request: DesembolsarLoteRequest):
-    # ... (código de desembolso ya implementado)
-    pass
+    results = []
+    for desembolso_info in request.desembolsos:
+        proposal_id = desembolso_info.proposal_id
+        try:
+            # Update status to DESEMBOLSADA
+            db.update_proposal_status(proposal_id, 'DESEMBOLSADA')
+            
+            # Add audit event (assuming initial status was 'ACTIVO')
+            db.add_audit_event(
+                usuario_id=request.usuario_id,
+                entidad_id=proposal_id,
+                accion="DESEMBOLSO",
+                estado_anterior="ACTIVO",
+                estado_nuevo="DESEMBOLSADA",
+                detalles_adicionales={"monto_desembolsado": desembolso_info.monto_desembolsado, "fecha_desembolso": desembolso_info.fecha_desembolso_real}
+            )
+            
+            results.append({"proposal_id": proposal_id, "status": "SUCCESS", "message": "Estado actualizado a DESEMBOLSADA."})
+        except Exception as e:
+            results.append({"proposal_id": proposal_id, "status": "ERROR", "message": f"Error al actualizar estado: {e}"})
+    
+    return {"resultados_del_lote": results}
 
 # --- Routers ---
 app.include_router(liquidaciones.router, prefix="/liquidaciones", tags=["liquidaciones"])
