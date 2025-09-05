@@ -153,10 +153,22 @@ def mostrar_desembolso():
     # Calcular el total para el campo de suma
     total_monto_calculado = sum(f.get('monto_a_depositar_ui', 0) for f in st.session_state.facturas_a_desembolsar)
 
+    # Mover el checkbox aquí para que controle la UI en tiempo real
+    st.checkbox("APLICAR SUSTENTO DE PAGO UNICO", key="sustento_unico")
+
     with st.form(key="desembolso_form"):
         st.markdown("#### Configuración Global")
         g_vars = st.session_state.global_desembolso_vars
         g_vars['fecha_desembolso'] = st.date_input("Fecha de Desembolso para Todos", g_vars['fecha_desembolso'])
+        
+        # El file_uploader permanece dentro del form, pero ahora su estado
+        # (disabled) será controlado correctamente por el checkbox de fuera.
+        st.session_state.consolidated_proof_file = st.file_uploader(
+            "Subir Evidencia Consolidada (PDF/Imagen)", 
+            type=["pdf", "png", "jpg", "jpeg"], 
+            key="consolidated_uploader",
+            disabled=not st.session_state.sustento_unico
+        )
         
         st.markdown("---")
         st.markdown("#### Facturas del Lote")
@@ -177,13 +189,6 @@ def mostrar_desembolso():
                     )
         
         st.markdown("---")
-        st.checkbox("APLICAR SUSTENTO DE PAGO UNICO", key="sustento_unico")
-        st.session_state.consolidated_proof_file = st.file_uploader(
-            "Subir Evidencia Consolidada (PDF/Imagen)", 
-            type=["pdf", "png", "jpg", "jpeg"], 
-            key="consolidated_uploader",
-            disabled=not st.session_state.sustento_unico
-        )
         st.number_input("Monto a Depositar (Total Lote)", value=total_monto_calculado, key="monto_total_desembolso", format="%.2f")
 
 
@@ -237,11 +242,11 @@ def mostrar_desembolso():
             st.rerun()
 
 # --- UI: Título y CSS ---
-st.markdown("""<style>
+st.markdown('''<style>
 [data-testid="stHorizontalBlock"] { 
     align-items: center; 
 }
-</style>""", unsafe_allow_html=True)
+</style>''', unsafe_allow_html=True)
 
 col1, col2, col3 = st.columns([0.25, 0.5, 0.25])
 with col1:
