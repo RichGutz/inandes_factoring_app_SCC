@@ -399,7 +399,7 @@ def mostrar_liquidacion():
                     response.raise_for_status()
                     st.session_state.resultados_liquidacion_lote = response.json()
                     st.success("¡Simulación de lote completada con éxito!")
-                    st.rerun()
+                    
                     
                 except requests.exceptions.RequestException as e:
                     st.error(f"Error de conexión con la API: {e}")
@@ -530,11 +530,14 @@ def mostrar_liquidacion():
 
 
 # --- UI: Título y CSS ---
+
 st.markdown("""<style>
 [data-testid="stHorizontalBlock"] {
-    align-items: center;
+   align-items: center;
 }
 </style>""", unsafe_allow_html=True)
+
+
 col1, col2, col3 = st.columns([0.25, 0.5, 0.25])
 with col1:
     st.image(os.path.join(project_root, "static", "logo_geek.png"), width=200)
