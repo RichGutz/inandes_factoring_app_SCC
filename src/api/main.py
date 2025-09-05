@@ -105,4 +105,43 @@ async def encontrar_tasa_lote_endpoint(payload: List[Dict[str, Any]]):
 
 # --- Endpoints Antiguos / de Cálculo ---
 
+@app.post("/get_projected_balance")
+async def get_projected_balance_endpoint(request: GetProjectedBalanceRequest):
+    try:
+        # 1. Get proposal details to extract interest rates
+        datos_operacion = db.get_proposal_details_by_id(request.proposal_id)
+        if not datos_operacion:
+            raise HTTPException(status_code=404, detail=f"Propuesta {request.proposal_id} no encontrada.")
+        
+        tasa_compensatoria_mensual = datos_operacion.get('interes_mensual', 0.0)
+        tasa_moratoria_mensual = datos_operacion.get('interes_moratorio', 0.0) # Assuming this is monthly, adjust if annual
+
+        # 2. Convert date string to datetime.date object
+        try:
+            fecha_inicio_proyeccion_date = datetime.strptime(request.fecha_inicio_proyeccion, '%Y-%m-%d').date()
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Formato de fecha_inicio_proyeccion inválido. Se espera YYYY-MM-DD.")
+
+        # 3. Define projection days (e.g., 30 days for a monthly view)
+        dias_proyeccion = 30 # Or a more dynamic value if needed
+
+        # 4. Call the projection function from liquidation_calculator
+        from core.liquidation_calculator import proyectar_saldo_diario # Import here to avoid circular dependency if needed
+        
+        proyeccion_futura = proyectar_saldo_diario(
+            capital_inicial=request.initial_capital,
+            fecha_inicio=fecha_inicio_proyeccion_date,
+            tasa_compensatoria_mensual=tasa_compensatoria_mensual,
+            tasa_moratoria_mensual=tasa_moratoria_mensual,
+            dias_proyeccion=dias_proyeccion
+        )
+        
+        return {"proyeccion_futura": proyeccion_futura}
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error interno del servidor al proyectar saldo: {e}")
+
+# --- Endpoints Antiguos / de Cálculo ---
+
 # ... (resto de los endpoints sin cambios)
