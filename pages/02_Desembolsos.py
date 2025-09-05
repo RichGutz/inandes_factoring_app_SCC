@@ -231,7 +231,7 @@ def mostrar_desembolso():
                     if status == 'SUCCESS':
                         try:
                             db.update_proposal_status(pid, 'DESEMBOLSADA')
-                            st.success(f"✅ Factura {parse_invoice_number(pid)}: {message}. Estado actualizado a DESEMBOLSADA.")
+                            st.toast(f"✅ Factura {parse_invoice_number(pid)}: {message}. Estado actualizado a DESEMBOLSADA.")
                         except Exception as e:
                             st.error(f"❌ Factura {parse_invoice_number(pid)}: {message}. Error al actualizar estado: {e}")
                     else:
