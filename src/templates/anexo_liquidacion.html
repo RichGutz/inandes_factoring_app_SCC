@@ -13,26 +13,30 @@
             font-size: 8px;
             color: #333;
         }
-        .header-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
             margin-bottom: 20px;
         }
-        .header-left {
-            width: 40%;
+        .header-table td {
+            vertical-align: top;
+            padding: 0;
         }
-        .header-right {
-            width: 60%;
-            text-align: center; /* Centered content in header-right */
+        .header-table .logo-cell {
+            width: 33%;
+            text-align: left;
         }
-        .header-right .main-title {
+        .header-table .title-cell {
+            width: 34%;
+            text-align: center;
+        }
+        .header-table .date-page-cell {
+            width: 33%;
+            text-align: right;
+        }
+        .header-table .main-title {
             font-size: 16px;
             font-weight: bold;
-            margin: 0;
-        }
-        .header-right .sub-title {
-            font-size: 10px;
             margin: 0;
         }
         .info-table {
@@ -96,19 +100,21 @@
 </head>
 <body>
 
-    <div class="header-container">
-        <div class="header-left">
-            <img src="static/logo_inandes.png" alt="Logo Inandes" style="width: 150px; margin-bottom: 5px;"> <!-- Added logo -->
-        </div>
-        <div class="header-right">
-            <p class="main-title">ANEXO N° - {{ anexo_number }}</p>
-            <!-- Removed: <p class="sub-title">Contrato de Adelanto de Cuentas por Cobrar</p> -->
-            <br>
-            <p><strong>Fecha:</strong> {{ print_date.strftime('%d/%m/%Y') }}</p>
-            <p><strong>Hora:</strong> {{ print_date.strftime('%H:%M:%S') }}</p>
-            <p><strong>Página:</strong> 1</p>
-        </div>
-    </div>
+    <table class="header-table">
+        <tr>
+            <td class="logo-cell">
+                <img src="static/logo_inandes.png" alt="Logo Inandes" style="width: 150px; margin-bottom: 5px;">
+            </td>
+            <td class="title-cell">
+                <p class="main-title">ANEXO N° - {{ anexo_number }}</p>
+            </td>
+            <td class="date-page-cell">
+                <p><strong>Fecha:</strong> {{ print_date.strftime('%d/%m/%Y') }}</p>
+                <p><strong>Hora:</strong> {{ print_date.strftime('%H:%M:%S') }}</p>
+                <p><strong>Página:</strong> 1</p>
+            </td>
+        </tr>
+    </table>
 
     <table class="info-table">
         <tr>
