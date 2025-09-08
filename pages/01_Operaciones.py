@@ -15,7 +15,7 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 from src.services import pdf_parser
 from src.data import supabase_repository as db
 from src.utils import pdf_generators
-from pages.liquidacion_builder import generar_pdf_liquidacion_lucy
+from pages.liquidacion_builder import generar_anexo_liquidacion_pdf # Updated import
 
 # --- Estrategia Unificada para la URL del Backend ---
 
@@ -842,38 +842,18 @@ if st.session_state.invoices_data:
     with col4:
         if st.button("Generar Liquidación", disabled=not can_print_profiles, help=COMMENT_LIQUIDACION, use_container_width=True):
             if can_print_profiles:
-                # Find the first invoice that has a result to generate the report
-                invoice_to_print = next((inv for inv in st.session_state.invoices_data if inv.get('recalculate_result')), None)
+                # Find all invoices that have a result to generate the report
+                invoices_to_generate_anexo = [inv for inv in st.session_state.invoices_data if inv.get('recalculate_result')]
 
-                if invoice_to_print:
-                    st.write("Generando Liquidación de Operación...")
+                if invoices_to_generate_anexo:
+                    st.write("Generando Anexo de Liquidación...")
                     try:
-                        # Prepare data dictionary for the new PDF generator
-                        recalc_result = invoice_to_print.get('recalculate_result', {})
-                        desglose = recalc_result.get('desglose_final_detallado', {})
-                        calculos = recalc_result.get('calculo_con_tasa_encontrada', {})
-
-                        datos_liquidacion = {
-                            'razon_social_descontadora': invoice_to_print.get('emisor_nombre', ''),
-                            'RUC_empresa_descontadora': invoice_to_print.get('emisor_ruc', ''),
-                            'lote_id': invoice_to_print.get('identificador_lote', 'N/A'),
-                            'moneda': invoice_to_print.get('moneda_factura', 'Soles'),
-                            'tasa_mensual': invoice_to_print.get('interes_mensual', 0) / 100,
-                            'plazo_operacion': calculos.get('plazo_operacion', 0),
-                            'numero_factura': invoice_to_print.get('numero_factura', ''),
-                            'fecha_emision': invoice_to_print.get('fecha_emision_factura', ''),
-                            'fecha_pago': invoice_to_print.get('fecha_pago_calculada', ''),
-                            'importe_total_factura': invoice_to_print.get('monto_total_factura', 0),
-                            'intereses': desglose.get('interes', {}).get('monto', 0),
-                            'comision_desembolso': desglose.get('comision_estructuracion', {}).get('monto', 0),
-                            'neto_a_desembolsar': desglose.get('abono', {}).get('monto', 0)
-                        }
-
                         # Generate the PDF using the new builder
-                        pdf_bytes = generar_pdf_liquidacion_lucy(datos_liquidacion)
+                        pdf_bytes = generar_anexo_liquidacion_pdf(invoices_to_generate_anexo) # Changed function call
                         
                         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                        output_filename = f"liquidacion_{datos_liquidacion['numero_factura']}_{timestamp}.pdf"
+                        # Use a more generic filename for the consolidated annex
+                        output_filename = f"anexo_liquidacion_{timestamp}.pdf"
                         
                         st.download_button(
                             label=f"Descargar {output_filename}",
@@ -884,9 +864,9 @@ if st.session_state.invoices_data:
                     except Exception as e:
                         st.error(f"Error al generar la liquidación: {e}")
                 else:
-                    st.warning("No se encontró una factura con resultados calculados para generar la liquidación.")
+                    st.warning("No se encontraron facturas con resultados calculados para generar el anexo de liquidación.")
             else:
-                st.warning("No hay resultados de cálculo para generar la liquidación.")
+                st.warning("No hay resultados de cálculo para generar el anexo de liquidación.")
     
     st.markdown("---")
     st.write("#### Descripción de las Acciones:")

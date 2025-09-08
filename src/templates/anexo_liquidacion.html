@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Anexo de Liquidación</title>
+    <style>
+        @page {
+            size: A4 portrait; /* Changed to portrait */
+            margin: 1cm;
+        }
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            font-size: 8px;
+            color: #333;
+        }
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+        .header-left {
+            width: 40%;
+        }
+        .header-right {
+            width: 60%;
+            text-align: right;
+        }
+        .header-right .main-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin: 0;
+        }
+        .header-right .sub-title {
+            font-size: 10px;
+            margin: 0;
+        }
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+        .info-table td {
+            padding: 2px 5px;
+            vertical-align: top;
+        }
+        .info-table .label {
+            font-weight: bold;
+            width: 15%;
+        }
+        .main-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 7.5px;
+            margin-bottom: 20px;
+        }
+        .main-table th, .main-table td {
+            border: 1px solid #999;
+            padding: 4px;
+            text-align: center;
+        }
+        .main-table th {
+            background-color: #E0E0E0;
+            font-weight: bold;
+        }
+        .main-table .text-right {
+            text-align: right;
+        }
+        .main-table .text-left {
+            text-align: left;
+        }
+        .summary-container {
+            display: flex;
+            justify-content: flex-end;
+            align-items: flex-start;
+        }
+        .summary-table {
+            border-collapse: collapse;
+            width: 45%;
+            font-size: 8px;
+        }
+        .summary-table td {
+            border: 1px solid #999;
+            padding: 4px;
+        }
+        .summary-table .label {
+            font-weight: bold;
+            background-color: #E0E0E0;
+            width: 60%;
+        }
+        .summary-table .value {
+            text-align: right;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="header-container">
+        <div class="header-left">
+            <img src="static/logo_inandes.png" alt="Logo Inandes" style="width: 150px; margin-bottom: 5px;"> <!-- Added logo -->
+        </div>
+        <div class="header-right">
+            <p class="main-title">ANEXO N° - {{ anexo_number }}</p>
+            <p class="sub-title">Contrato de Adelanto de Cuentas por Cobrar</p>
+            <br>
+            <p><strong>Fecha:</strong> {{ print_date.strftime('%d/%m/%Y') }}</p>
+            <p><strong>Hora:</strong> {{ print_date.strftime('%H:%M:%S') }}</p>
+            <p><strong>Página:</strong> 1</p>
+        </div>
+    </div>
+
+    <table class="info-table">
+        <tr>
+            <td class="label">EMISOR:</td>
+            <td>{{ emisor.nombre }}</td>
+            <td class="label">PAGADOR:</td>
+            <td>{{ pagador.nombre }}</td>
+        </tr>
+        <tr>
+            <td class="label">RUC EMISOR:</td>
+            <td>{{ emisor.ruc }}</td>
+            <td class="label">RUC PAGADOR:</td>
+            <td>{{ pagador.ruc }}</td>
+        </tr>
+        <tr>
+            <td class="label">Moneda:</td>
+            <td colspan="3">{{ moneda }}</td>
+        </tr>
+    </table>
+
+    <table class="main-table">
+        <thead>
+            <tr>
+                <th>N° Factura</th>
+                <th>Monto Neto de Factura</th>
+                <th>Capital</th>
+                <th>Fecha de Vencimiento</th>
+                <th>Fecha de Desembolso</th>
+                <th>Plazo de Operacion (días)</th>
+                <th>Intereses</th>
+                <th>Monto a Desembolsar</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for inv in invoices %}
+            <tr>
+                <td>{{ inv.numero_factura }}</td>
+                <td class="text-right">{{ inv.monto_neto_factura | format_currency('') }}</td>
+                <td class="text-right">{{ inv.recalculate_result.calculo_con_tasa_encontrada.capital | format_currency('') }}</td>
+                <td>{{ inv.fecha_pago_calculada }}</td>
+                <td>{{ inv.fecha_desembolso_factoring }}</td>
+                <td>{{ inv.plazo_operacion_calculado }}</td>
+                <td class="text-right">{{ inv.recalculate_result.desglose_final_detallado.interes.monto | format_currency('') }}</td>
+                <td class="text-right">{{ inv.recalculate_result.desglose_final_detallado.abono.monto | format_currency('') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <th class="text-left">TOTALES</th>
+                <th class="text-right">{{ totals.monto_neto | format_currency('') }}</th>
+                <th class="text-right">{{ totals.capital | format_currency('') }}</th>
+                <th colspan="3"></th>
+                <th class="text-right">{{ totals.intereses | format_currency('') }}</th>
+                <th class="text-right">{{ totals.monto_desembolsar | format_currency('') }}</th>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div class="summary-container">
+        <table class="summary-table">
+            <tr>
+                <td colspan="2" style="text-align:center; font-weight:bold; background-color: #E0E0E0;">RESUMEN DE LIQUIDACION</td>
+            </tr>
+            <tr>
+                <td class="label">Monto a desembolsar</td>
+                <td class="value">{{ totals.monto_desembolsar | format_currency('S/') }}</td>
+            </tr>
+            <tr>
+                <td class="label">Comisiones</td>
+                <td class="value">{{ totals.comisiones | format_currency('S/') }}</td>
+            </tr>
+            <tr>
+                <td class="label">Margen de Seguridad</td>
+                <td class="value">{{ totals.margen_seguridad | format_currency('S/') }}</td>
+            </tr>
+            <tr>
+                <td class="label">IGV</td>
+                <td class="value">{{ totals.igv | format_currency('S/') }}</td>
+            </tr>
+            <tr>
+                <td class="label">Neto a desembolsar</td>
+                <td class="value">{{ totals.neto_desembolsar | format_currency('S/') }}</td>
+            </tr>
+        </table>
+    </div>
+
+</body>
+</html>

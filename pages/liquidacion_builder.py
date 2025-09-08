@@ -1,158 +1,94 @@
+import os
 import datetime
-from fpdf import FPDF
+from jinja2 import Environment, FileSystemLoader
+from weasyprint import HTML, CSS
+from typing import List, Dict, Any
 
-class PDF(FPDF):
-    def header(self):
-        # No header by default
-        pass
+def _format_currency(value: float, currency: str = "PEN") -> str:
+    """Formats a number as currency with a thousands separator and symbol."""
+    if value is None:
+        return ""
+    try:
+        val = float(value)
+    except (ValueError, TypeError):
+        return str(value)
+    
+    if currency:
+        return f"{currency} {val:,.2f}"
+    else:
+        return f"{val:,.2f}"
 
-    def footer(self):
-        self.set_y(-15)
-        self.set_font('Arial', 'I', 8)
-        # Page number
-        # self.cell(0, 10, 'Page ' + str(self.page_no()) + '/{nb}', 0, 0, 'C')
-
-def generar_pdf_liquidacion_lucy(datos):
+def generar_anexo_liquidacion_pdf(invoices_data: List[Dict[str, Any]]) -> bytes | None:
     """
-    Genera un archivo PDF de liquidación con el formato específico de LUCY.
-
-    Args:
-        datos (dict): Un diccionario conteniendo toda la información necesaria para la liquidación.
-                      Ej: {
-                          'razon_social_descontadora': 'MI EMPRESA S.A.C.',
-                          'RUC_empresa_descontadora': '20111111111',
-                          'lote_id': 'OPER-001',
-                          'moneda': 'Soles',
-                          'tasa_mensual': 0.03,
-                          'plazo_operacion': 30,
-                          'numero_factura': 'F001-00123',
-                          'fecha_emision': '01/08/2025',
-                          'fecha_pago': '31/08/2025',
-                          'importe_total_factura': 10000.00,
-                          'intereses': 300.00,
-                          'comision_desembolso': 50.00,
-                          'neto_a_desembolsar': 8150.00
-                      }
+    Generates the 'Anexo de Liquidación' PDF for one or more invoices.
+    This follows the project's standard of using Jinja2 templates and WeasyPrint.
     """
-    pdf = PDF('P', 'mm', 'A4')
-    pdf.add_page()
-    pdf.set_auto_page_break(auto=True, margin=15)
-    pdf.set_font('Arial', '', 10)
+    try:
+        # --- 1. Setup Paths and Jinja2 Environment ---
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..')) # Corrected path
+        templates_dir = os.path.join(project_root, 'src', 'templates')
+        static_dir = os.path.join(project_root, 'static')
 
-    # === 1. TÍTULO Y FECHA ===
-    pdf.set_font('Arial', 'B', 14)
-    pdf.cell(0, 10, 'LIQUIDACIÓN DE OPERACIÓN DE FACTORING', 0, 1, 'C')
-    pdf.set_font('Arial', 'B', 10)
-    pdf.cell(0, 5, 'CONTRATO DE ADELANTO DE CUENTAS POR COBRAR', 0, 1, 'C')
-    pdf.ln(10)
+        env = Environment(loader=FileSystemLoader(templates_dir))
+        env.filters['format_currency'] = _format_currency # Changed to filters
+        template = env.get_template("anexo_liquidacion.html")
 
-    fecha_liquidacion = datetime.datetime.now().strftime("%d de %B de %Y")
-    pdf.set_font('Arial', '', 10)
-    pdf.cell(0, 5, f'Lima, {fecha_liquidacion}', 0, 1, 'R')
-    pdf.ln(5)
+        # --- 2. Process Data and Calculate Totals ---
+        if not invoices_data:
+            return None
 
-    # === 2. DATOS DEL CLIENTE ===
-    pdf.set_font('Arial', 'B', 10)
-    pdf.cell(0, 5, 'SEÑORES:', 0, 1, 'L')
-    pdf.set_font('Arial', '', 10)
-    pdf.cell(0, 5, datos.get('razon_social_descontadora', ''), 0, 1, 'L')
-    pdf.cell(0, 5, f"RUC: {datos.get('RUC_empresa_descontadora', '')}", 0, 1, 'L')
-    pdf.cell(0, 5, 'Presente.-', 0, 1, 'L')
-    pdf.ln(5)
+        # Data for the header (assuming it's the same for all invoices in the batch)
+        first_invoice = invoices_data[0]
+        emisor = {
+            'nombre': first_invoice.get('emisor_nombre', ''),
+            'ruc': first_invoice.get('emisor_ruc', '')
+        }
+        pagador = {
+            'nombre': first_invoice.get('aceptante_nombre', ''),
+            'ruc': first_invoice.get('aceptante_ruc', '')
+        }
 
-    # === 3. PÁRRAFO INTRODUCTORIO ===
-    pdf.cell(0, 5, 'De nuestra consideración:', 0, 1, 'L')
-    pdf.ln(5)
-    pdf.multi_cell(0, 5, 
-        'Por medio de la presente, y en el marco del Contrato de Adelanto de Cuentas por Cobrar (en adelante, el "Contrato"), '
-        'cumplimos con remitirles la liquidación correspondiente al adelanto sobre las cuentas por cobrar que han sido '
-        'cedidas a nuestra empresa.'
-    )
-    pdf.ln(10)
+        # Calculate totals for the main table footer
+        totals = {
+            'monto_neto': sum(inv.get('monto_neto_factura', 0) for inv in invoices_data),
+            'capital': sum(inv.get('recalculate_result', {}).get('calculo_con_tasa_encontrada', {}).get('capital', 0) for inv in invoices_data),
+            'intereses': sum(inv.get('recalculate_result', {}).get('desglose_final_detallado', {}).get('interes', {}).get('monto', 0) for inv in invoices_data),
+            'monto_desembolsar': sum(inv.get('recalculate_result', {}).get('desglose_final_detallado', {}).get('abono', {}).get('monto', 0) for inv in invoices_data)
+        }
 
-    # === 4. RESUMEN DE LA OPERACIÓN ===
-    pdf.set_font('Arial', 'B', 11)
-    pdf.cell(0, 10, '1. Resumen de la Operación', 0, 1, 'L')
-    
-    tasa_mensual = datos.get('tasa_mensual', 0)
-    tea = ((1 + tasa_mensual) ** 12 - 1) * 100 if tasa_mensual else 0
+        # Calculate totals for the summary table
+        total_comisiones = sum(inv.get('recalculate_result', {}).get('desglose_final_detallado', {}).get('comision_estructuracion', {}).get('monto', 0) for inv in invoices_data)
+        total_margen_seguridad = sum(inv.get('recalculate_result', {}).get('desglose_final_detallado', {}).get('margen_seguridad', {}).get('monto', 0) for inv in invoices_data)
+        total_igv = sum(inv.get('recalculate_result', {}).get('calculo_con_tasa_encontrada', {}).get('igv_total', 0) for inv in invoices_data)
+        
+        # This is the final amount the client receives
+        neto_a_desembolsar_final = totals['monto_desembolsar'] - total_comisiones - total_igv
 
-    resumen_data = {
-        "Código de Operación:": datos.get('lote_id', 'N/A'),
-        "Fecha de Liquidación:": fecha_liquidacion,
-        "Moneda:": datos.get('moneda', 'Soles'),
-        "Tasa de Interés Efectiva Anual (TEA):": f"{tea:.2f}%",
-        "Plazo de la Operación:": f"{datos.get('plazo_operacion', 0)} días"
-    }
+        totals['comisiones'] = total_comisiones
+        totals['margen_seguridad'] = total_margen_seguridad
+        totals['igv'] = total_igv
+        totals['neto_desembolsar'] = neto_a_desembolsar_final
 
-    pdf.set_font('Arial', '', 10)
-    for key, value in resumen_data.items():
-        pdf.set_font('Arial', 'B', 10)
-        pdf.cell(70, 6, key, 0, 0, 'L')
-        pdf.set_font('Arial', '', 10)
-        pdf.cell(0, 6, value, 0, 1, 'L')
-    pdf.ln(10)
+        # --- 3. Prepare Template Data ---
+        template_data = {
+            'invoices': invoices_data,
+            'emisor': emisor,
+            'pagador': pagador,
+            'moneda': first_invoice.get('moneda_factura', 'PEN'),
+            'anexo_number': first_invoice.get('anexo_number', '' ),
+            'print_date': datetime.datetime.now(),
+            'totals': totals
+        }
 
-    # === 5. DETALLE DE INSTRUMENTOS NEGOCIADOS ===
-    pdf.set_font('Arial', 'B', 11)
-    pdf.cell(0, 10, '2. Detalle de Instrumentos Negociados', 0, 1, 'L')
-    
-    # Table Header
-    pdf.set_fill_color(230, 230, 230)
-    pdf.set_font('Arial', 'B', 9)
-    pdf.cell(35, 7, 'Tipo de Documento', 1, 0, 'C', 1)
-    pdf.cell(40, 7, 'N° de Documento', 1, 0, 'C', 1)
-    pdf.cell(30, 7, 'Fecha de Emisión', 1, 0, 'C', 1)
-    pdf.cell(35, 7, 'Fecha de Vencimiento', 1, 0, 'C', 1)
-    pdf.cell(40, 7, 'Valor Nominal', 1, 1, 'C', 1)
+        # --- 4. Render HTML and Convert to PDF ---
+        html_out = template.render(template_data)
+        
+        # The base_url is crucial for WeasyPrint to find local files like logos or CSS
+        base_url = project_root
+        
+        return HTML(string=html_out, base_url=base_url).write_pdf()
 
-    # Table Row
-    pdf.set_font('Arial', '', 9)
-    valor_nominal = datos.get('importe_total_factura', 0)
-    pdf.cell(35, 7, 'Factura', 1, 0, 'C')
-    pdf.cell(40, 7, datos.get('numero_factura', ''), 1, 0, 'C')
-    pdf.cell(30, 7, datos.get('fecha_emision', ''), 1, 0, 'C')
-    pdf.cell(35, 7, datos.get('fecha_pago', ''), 1, 0, 'C')
-    pdf.cell(40, 7, f"S/ {valor_nominal:,.2f}", 1, 1, 'R')
-    pdf.ln(10)
-
-    # === 6. DETALLE DE LA LIQUIDACIÓN ===
-    pdf.set_font('Arial', 'B', 11)
-    pdf.cell(0, 10, '3. Detalle de la Liquidación', 0, 1, 'L')
-
-    adelanto_pct = 0.85
-    adelanto_monto = valor_nominal * adelanto_pct
-    total_descuentos = datos.get('intereses', 0) + datos.get('comision_desembolso', 0)
-    monto_a_abonar = adelanto_monto - total_descuentos
-
-    liquidacion_data = {
-        "Valor Nominal Total:": f"S/ {valor_nominal:,.2f}",
-        f"Adelanto ({adelanto_pct:.2%}):": f"S/ {adelanto_monto:,.2f}",
-        "Intereses:": f"- S/ {datos.get('intereses', 0):,.2f}",
-        "Comisiones / Otros:": f"- S/ {datos.get('comision_desembolso', 0):,.2f}",
-        "Monto a Abonar:": f"S/ {datos.get('neto_a_desembolsar', 0):,.2f}"
-    }
-    # Usamos el del front por si hay logica adicional
-    
-    pdf.set_font('Arial', '', 10)
-    for key, value in liquidacion_data.items():
-        pdf.set_font('Arial', 'B', 10)
-        pdf.cell(70, 6, key, 0, 0, 'L')
-        pdf.set_font('Arial', '', 10)
-        pdf.cell(0, 6, value, 0, 1, 'L')
-    pdf.ln(15)
-
-    # === 7. CIERRE Y FIRMA ===
-    pdf.cell(0, 5, 'Sin otro particular, quedamos de ustedes.', 0, 1, 'L')
-    pdf.ln(5)
-    pdf.cell(0, 5, 'Atentamente,', 0, 1, 'L')
-    pdf.ln(20)
-
-    pdf.cell(0, 5, '_________________________', 0, 1, 'L')
-    pdf.set_font('Arial', 'B', 10)
-    pdf.cell(0, 5, 'p. LUCY CAPITAL S.A.C.', 0, 1, 'L')
-    pdf.cell(0, 5, 'RUC 20610143293', 0, 1, 'L')
-
-    # --- Guardar el PDF ---
-    # El guardado se hará en el script principal para poder servirlo al usuario
-    return bytes(pdf.output())
+    except Exception as e:
+        print(f"[ERROR in PDF Generation]: {e}")
+        # Optionally, re-raise or handle the exception as needed
+        raise e
