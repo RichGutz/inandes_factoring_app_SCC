@@ -6,5 +6,5 @@ weasyprint
 requests
 streamlit_mermaid
 pdfplumber
-pdf2
+fpdf2
 # Forzar-Reconstruccion-Completa-V20250901
