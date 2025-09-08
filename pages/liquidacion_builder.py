@@ -155,5 +155,4 @@ def generar_pdf_liquidacion_lucy(datos):
 
     # --- Guardar el PDF ---
     # El guardado se hará en el script principal para poder servirlo al usuario
-    pdf_bytes = pdf.output(dest='S').encode('latin1')
-    return pdf_bytes
+    return bytes(pdf.output())

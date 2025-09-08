@@ -232,21 +232,20 @@ if 'aplicar_interes_moratorio_global' not in st.session_state: st.session_state.
 if 'interes_moratorio_global' not in st.session_state: st.session_state.interes_moratorio_global = st.session_state.default_interes_moratorio
 
 # --- UI: Título y CSS ---
-st.markdown("<style>\n[data-testid=\"stHorizontalBlock\"] { 
-    align-items: flex-start; 
-}\n</style>", unsafe_allow_html=True)
-
 st.markdown("""
 <style>
-.stButton>button.red-button {
-    background-color: #FF4B4B; /* Streamlit's default red for error messages */
-    color: white;
-    border-color: #FF4B4B;
-}
-.stButton>button.red-button:hover {
-    background-color: #FF6F6F; /* Slightly lighter red on hover */
-    border-color: #FF6F6F;
-}
+    [data-testid="stHorizontalBlock"] { 
+        align-items: flex-start; 
+    }
+    .stButton>button.red-button {
+        background-color: #FF4B4B;
+        color: white;
+        border-color: #FF4B4B;
+    }
+    .stButton>button.red-button:hover {
+        background-color: #FF6F6F;
+        border-color: #FF6F6F;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -859,7 +858,7 @@ if st.session_state.invoices_data:
                             'RUC_empresa_descontadora': invoice_to_print.get('emisor_ruc', ''),
                             'lote_id': invoice_to_print.get('identificador_lote', 'N/A'),
                             'moneda': invoice_to_print.get('moneda_factura', 'Soles'),
-                            'tasa_mensual': invoice_to_print.get('interes_mensual', 0) / 100, # Convert from % to decimal
+                            'tasa_mensual': invoice_to_print.get('interes_mensual', 0) / 100,
                             'plazo_operacion': calculos.get('plazo_operacion', 0),
                             'numero_factura': invoice_to_print.get('numero_factura', ''),
                             'fecha_emision': invoice_to_print.get('fecha_emision_factura', ''),
@@ -891,9 +890,10 @@ if st.session_state.invoices_data:
     
     st.markdown("---")
     st.write("#### Descripción de las Acciones:")
-    st.markdown(f"""
-- **Calcular Facturas:** {COMMENT_CALCULAR}
-- **GRABAR Propuesta:** {COMMENT_GRABAR}
-- **Generar Perfil:** {COMMENT_PERFIL}
-- **Generar Liquidación:** {COMMENT_LIQUIDACION}
-""")
+    comment_string = (
+        f"- **Calcular Facturas:** {COMMENT_CALCULAR}\n\n"
+        f"- **GRABAR Propuesta:** {COMMENT_GRABAR}\n\n"
+        f"- **Generar Perfil:** {COMMENT_PERFIL}\n\n"
+        f"- **Generar Liquidación:** {COMMENT_LIQUIDACION}"
+    )
+    st.markdown(comment_string)
