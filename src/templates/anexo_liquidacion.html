@@ -81,10 +81,11 @@
             display: flex;
             justify-content: center; /* Centered summary table */
             align-items: flex-start;
+            gap: 20px; /* Space between tables */
         }
         .summary-table {
             border-collapse: collapse;
-            width: 45%;
+            width: 45%; /* Adjusted width for two tables */
             font-size: 8px;
         }
         .summary-table td {
@@ -209,6 +210,44 @@
             <tr>
                 <td class="label">Neto a desembolsar</td>
                 <td class="value">{{ totals.neto_desembolsar | format_currency('S/') }}</td>
+            </tr>
+        </table>
+
+        <table class="summary-table">
+            <tr>
+                <td colspan="2" style="text-align:center; font-weight:bold;">Forma de Desembolso</td>
+            </tr>
+            <tr>
+                <td class="label">Forma de Desembolso</td>
+                <td class="value">{{ deposit_info.forma_desembolso }}</td>
+            </tr>
+            <tr>
+                <td class="label">Beneficiario</td>
+                <td class="value">{{ deposit_info.beneficiario }}</td>
+            </tr>
+            <tr>
+                <td class="label">DNI Beneficiario</td>
+                <td class="value">{{ deposit_info.dni_beneficiario }}</td>
+            </tr>
+            <tr>
+                <td class="label">RUC Beneficiario</td>
+                <td class="value">{{ deposit_info.ruc_beneficiario }}</td>
+            </tr>
+            <tr>
+                <td class="label">Banco</td>
+                <td class="value">{{ deposit_info.banco }}</td>
+            </tr>
+            <tr>
+                <td class="label">Deposito en Cta.</td>
+                <td class="value">{{ deposit_info.deposito_cta }}</td>
+            </tr>
+            <tr>
+                <td class="label">CCI</td>
+                <td class="value">{{ deposit_info.cci }}</td>
+            </tr>
+            <tr>
+                <td class="label">Tipo Cuenta</td>
+                <td class="value">{{ deposit_info.tipo_cuenta }}</td>
             </tr>
         </table>
     </div>

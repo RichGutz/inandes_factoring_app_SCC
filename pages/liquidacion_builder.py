@@ -69,6 +69,18 @@ def generar_anexo_liquidacion_pdf(invoices_data: List[Dict[str, Any]]) -> bytes 
         totals['igv'] = total_igv
         totals['neto_desembolsar'] = neto_a_desembolsar_final
 
+        # Deposit Info (placeholders for now)
+        deposit_info = {
+            'forma_desembolso': 'Transferencia',
+            'beneficiario': emisor['nombre'], # Confirmed by user
+            'dni_beneficiario': 'N/A',
+            'ruc_beneficiario': emisor['ruc'], # Assuming same as emisor's RUC
+            'banco': 'N/A',
+            'deposito_cta': 'N/A',
+            'cci': 'N/A',
+            'tipo_cuenta': 'N/A'
+        }
+
         # --- 3. Prepare Template Data ---
         template_data = {
             'invoices': invoices_data,
@@ -77,7 +89,8 @@ def generar_anexo_liquidacion_pdf(invoices_data: List[Dict[str, Any]]) -> bytes 
             'moneda': first_invoice.get('moneda_factura', 'PEN'),
             'anexo_number': first_invoice.get('anexo_number', '' ),
             'print_date': datetime.datetime.now(),
-            'totals': totals
+            'totals': totals,
+            'deposit_info': deposit_info # Added deposit info
         }
 
         # --- 4. Render HTML and Convert to PDF ---
@@ -92,3 +105,4 @@ def generar_anexo_liquidacion_pdf(invoices_data: List[Dict[str, Any]]) -> bytes 
         print(f"[ERROR in PDF Generation]: {e}")
         # Optionally, re-raise or handle the exception as needed
         raise e
+
