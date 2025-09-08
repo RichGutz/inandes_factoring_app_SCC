@@ -15,6 +15,7 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 from src.services import pdf_parser
 from src.data import supabase_repository as db
 from src.utils import pdf_generators
+from pages.liquidacion_builder import generar_pdf_liquidacion_lucy
 
 # --- Estrategia Unificada para la URL del Backend ---
 
@@ -231,7 +232,9 @@ if 'aplicar_interes_moratorio_global' not in st.session_state: st.session_state.
 if 'interes_moratorio_global' not in st.session_state: st.session_state.interes_moratorio_global = st.session_state.default_interes_moratorio
 
 # --- UI: Título y CSS ---
-st.markdown("<style>\n[data-testid=\"stHorizontalBlock\"] { \n    align-items: flex-start; \n}\n</style>", unsafe_allow_html=True)
+st.markdown("<style>\n[data-testid=\"stHorizontalBlock\"] { 
+    align-items: flex-start; 
+}\n</style>", unsafe_allow_html=True)
 
 st.markdown("""
 <style>
@@ -840,36 +843,39 @@ if st.session_state.invoices_data:
     with col4:
         if st.button("Generar Liquidación", disabled=not can_print_profiles, help=COMMENT_LIQUIDACION, use_container_width=True):
             if can_print_profiles:
-                st.write("Generando Reporte EFIDE...")
-                
-                invoices_to_print = []
-                num_invoices_for_pdf = len([inv for inv in st.session_state.invoices_data if inv.get('recalculate_result')])
-                for invoice_btn in st.session_state.invoices_data:
-                    if invoice_btn.get('recalculate_result'):
-                        invoice_btn['detraccion_monto'] = invoice_btn.get('monto_total_factura', 0) - invoice_btn.get('monto_neto_factura', 0)
-                        invoice_btn['contract_number'] = st.session_state.get('contract_number', '')
-                        invoice_btn['anexo_number'] = st.session_state.get('anexo_number', '')
-                        invoice_btn['comision_de_estructuracion_global'] = st.session_state.comision_estructuracion_pct_global
-                        invoice_btn['comision_minima_pen_global'] = st.session_state.comision_estructuracion_min_pen_global
-                        invoice_btn['comision_minima_usd_global'] = st.session_state.comision_estructuracion_min_usd_global
-                        invoice_btn['num_invoices'] = num_invoices_for_pdf
-                        invoices_to_print.append(invoice_btn)
+                # Find the first invoice that has a result to generate the report
+                invoice_to_print = next((inv for inv in st.session_state.invoices_data if inv.get('recalculate_result')), None)
 
-                if invoices_to_print:
+                if invoice_to_print:
+                    st.write("Generando Liquidación de Operación...")
                     try:
-                        # --- INICIO DE LA CORRECCIÓN ---
-                        # Crear diccionario con datos del firmante
-                        signatory_data = {
-                            "name": "RAUL GUTIERREZ",
-                            "title": "Gerente General",
-                            "ruc": "20601935378"
+                        # Prepare data dictionary for the new PDF generator
+                        recalc_result = invoice_to_print.get('recalculate_result', {})
+                        desglose = recalc_result.get('desglose_final_detallado', {})
+                        calculos = recalc_result.get('calculo_con_tasa_encontrada', {})
+
+                        datos_liquidacion = {
+                            'razon_social_descontadora': invoice_to_print.get('emisor_nombre', ''),
+                            'RUC_empresa_descontadora': invoice_to_print.get('emisor_ruc', ''),
+                            'lote_id': invoice_to_print.get('identificador_lote', 'N/A'),
+                            'moneda': invoice_to_print.get('moneda_factura', 'Soles'),
+                            'tasa_mensual': invoice_to_print.get('interes_mensual', 0) / 100, # Convert from % to decimal
+                            'plazo_operacion': calculos.get('plazo_operacion', 0),
+                            'numero_factura': invoice_to_print.get('numero_factura', ''),
+                            'fecha_emision': invoice_to_print.get('fecha_emision_factura', ''),
+                            'fecha_pago': invoice_to_print.get('fecha_pago_calculada', ''),
+                            'importe_total_factura': invoice_to_print.get('monto_total_factura', 0),
+                            'intereses': desglose.get('interes', {}).get('monto', 0),
+                            'comision_desembolso': desglose.get('comision_estructuracion', {}).get('monto', 0),
+                            'neto_a_desembolsar': desglose.get('abono', {}).get('monto', 0)
                         }
-                        # Pasar el segundo argumento requerido a la función
-                        pdf_bytes = pdf_generators.generate_efide_report_pdf(invoices_to_print, signatory_data)
-                        # --- FIN DE LA CORRECCIÓN ---
+
+                        # Generate the PDF using the new builder
+                        pdf_bytes = generar_pdf_liquidacion_lucy(datos_liquidacion)
                         
                         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                        output_filename = f"reporte_efide_{timestamp}.pdf"
+                        output_filename = f"liquidacion_{datos_liquidacion['numero_factura']}_{timestamp}.pdf"
+                        
                         st.download_button(
                             label=f"Descargar {output_filename}",
                             data=pdf_bytes,
@@ -877,11 +883,11 @@ if st.session_state.invoices_data:
                             mime="application/pdf"
                         )
                     except Exception as e:
-                        st.error(f"Error al generar el Reporte EFIDE: {e}")
+                        st.error(f"Error al generar la liquidación: {e}")
                 else:
-                    st.warning("No hay perfiles calculados para generar el Reporte EFIDE.")
+                    st.warning("No se encontró una factura con resultados calculados para generar la liquidación.")
             else:
-                st.warning("No hay resultados de cálculo para generar el Reporte EFIDE.")
+                st.warning("No hay resultados de cálculo para generar la liquidación.")
     
     st.markdown("---")
     st.write("#### Descripción de las Acciones:")
