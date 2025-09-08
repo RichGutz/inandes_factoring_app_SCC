@@ -24,7 +24,7 @@
         }
         .header-right {
             width: 60%;
-            text-align: right;
+            text-align: center; /* Centered content in header-right */
         }
         .header-right .main-title {
             font-size: 16px;
@@ -102,7 +102,7 @@
         </div>
         <div class="header-right">
             <p class="main-title">ANEXO N° - {{ anexo_number }}</p>
-            <p class="sub-title">Contrato de Adelanto de Cuentas por Cobrar</p>
+            <!-- Removed: <p class="sub-title">Contrato de Adelanto de Cuentas por Cobrar</p> -->
             <br>
             <p><strong>Fecha:</strong> {{ print_date.strftime('%d/%m/%Y') }}</p>
             <p><strong>Hora:</strong> {{ print_date.strftime('%H:%M:%S') }}</p>
