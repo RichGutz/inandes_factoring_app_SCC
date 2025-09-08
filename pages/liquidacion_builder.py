@@ -1,4 +1,3 @@
-
 import datetime
 from fpdf import FPDF
 
@@ -131,8 +130,9 @@ def generar_pdf_liquidacion_lucy(datos):
         f"Adelanto ({adelanto_pct:.2%}):": f"S/ {adelanto_monto:,.2f}",
         "Intereses:": f"- S/ {datos.get('intereses', 0):,.2f}",
         "Comisiones / Otros:": f"- S/ {datos.get('comision_desembolso', 0):,.2f}",
-        "Monto a Abonar:": f"S/ {datos.get('neto_a_desembolsar', 0):,.2f}" # Usamos el del front por si hay logica adicional
+        "Monto a Abonar:": f"S/ {datos.get('neto_a_desembolsar', 0):,.2f}"
     }
+    # Usamos el del front por si hay logica adicional
     
     pdf.set_font('Arial', '', 10)
     for key, value in liquidacion_data.items():
@@ -157,4 +157,3 @@ def generar_pdf_liquidacion_lucy(datos):
     # El guardado se hará en el script principal para poder servirlo al usuario
     pdf_bytes = pdf.output(dest='S').encode('latin1')
     return pdf_bytes
-
