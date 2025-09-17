@@ -281,7 +281,6 @@ def mostrar_busqueda():
                             for d in st.session_state.facturas_a_liquidar:
                                 d['local_liquidation_vars'] = st.session_state.global_liquidation_vars.copy()
                                 d['local_liquidation_vars']['tasa_interes_compensatoria_pct'] = d.get('interes_mensual', 0.0)
-                                d['local_liquidation_vars']['monto_recibido'] = 0.0 # Inicializar monto_recibido local
                             st.session_state.vista_actual = 'liquidacion'
                             st.rerun()
                         else:
@@ -356,15 +355,9 @@ def mostrar_liquidacion():
                 l_cols = st.columns(4) # 4 columnas
                 l_vars['fecha_pago'] = l_cols[0].date_input("Fecha de Pago", l_vars['fecha_pago'], key=f"fl_{i}")
                 
-                recalc_result_json = f.get('recalculate_result_json')
-                if recalc_result_json:
-                    try:
-                        recalc_result = json.loads(recalc_result_json)
-                        calculos = recalc_result.get('calculo_con_tasa_encontrada', {})
-                        capital = calculos.get('capital', 0.0)
-                        l_vars['monto_recibido'] = capital
-                    except (json.JSONDecodeError, AttributeError):
-                        l_vars['monto_recibido'] = 0.0
+                # Por defecto, el monto recibido es el total de la factura.
+                # El usuario puede ajustarlo manualmente si el pago fue parcial.
+                l_vars['monto_recibido'] = f.get('monto_total_factura', 0.0)
                 
                 l_vars['monto_recibido'] = l_cols[1].number_input("Monto Recibido", value=l_vars.get('monto_recibido', 0.0), format="%.2f", key=f"mr_{i}")
                 l_vars['tasa_interes_compensatoria_pct'] = l_cols[2].number_input("Tasa Interés Compensatorio (% Mensual)", l_vars['tasa_interes_compensatoria_pct'], format="%.2f", key=f"tic_{i}")
@@ -531,7 +524,7 @@ def mostrar_liquidacion():
 # --- UI: Título y CSS ---
 
 st.markdown("""<style>
-[data-testid="stHorizontalBlock"] {
+[data-testid=\"stHorizontalBlock\"] {
    align-items: center;
 }
 </style>""", unsafe_allow_html=True)
