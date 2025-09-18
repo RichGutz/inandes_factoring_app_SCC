@@ -355,9 +355,9 @@ def mostrar_liquidacion():
                 l_cols = st.columns(4) # 4 columnas
                 l_vars['fecha_pago'] = l_cols[0].date_input("Fecha de Pago", l_vars['fecha_pago'], key=f"fl_{i}")
                 
-                # Por defecto, el monto recibido es el total de la factura.
+                # Por defecto, el monto recibido es el neto de la factura.
                 # El usuario puede ajustarlo manualmente si el pago fue parcial.
-                l_vars['monto_recibido'] = f.get('monto_total_factura', 0.0)
+                l_vars['monto_recibido'] = f.get('monto_neto_factura', 0.0)
                 
                 l_vars['monto_recibido'] = l_cols[1].number_input("Monto Recibido", value=l_vars.get('monto_recibido', 0.0), format="%.2f", key=f"mr_{i}")
                 l_vars['tasa_interes_compensatoria_pct'] = l_cols[2].number_input("Tasa Interés Compensatorio (% Mensual)", l_vars['tasa_interes_compensatoria_pct'], format="%.2f", key=f"tic_{i}")
