@@ -1,0 +1,83 @@
+### **PSEUDOCÓDIGO: ALGORITMO DE LIQUIDACIÓN UNIVERSAL**
+
+```
+INICIO PROGRAMA
+
+    // =================================================================================
+    // FUNCIÓN: procesar_evento_de_liquidacion
+    // Procesa un único evento de pago (sea el 1ro o el n-ésimo)
+    // =================================================================================
+    FUNCIÓN procesar_evento_de_liquidacion(datos_evento)
+        INICIO FUNCIÓN
+
+        // --- FASE 0: LECTURA DE DATOS DEL EVENTO ---
+        // El evento debe contener el estado anterior y los datos del nuevo pago.
+        LEER capital_pendiente_anterior DE datos_evento
+        LEER fecha_pago_calculada_original DE datos_evento
+        LEER fecha_ultimo_pago DE datos_evento // Fecha desde la que se calculan intereses
+        LEER monto_recibido DE datos_evento
+        LEER fecha_pago_actual DE datos_evento
+        LEER tasa_diaria_compensatoria DE datos_evento
+        LEER tasa_diaria_moratoria DE datos_evento
+
+        // --- FASE 1: CÁLCULO DE INTERESES DEVENGADOS ---
+        // Se calculan los intereses sobre el capital pendiente desde el último evento.
+        CALCULAR dias_de_interes = fecha_pago_actual - fecha_ultimo_pago
+        
+        CALCULAR interes_compensatorio_devengado = capital_pendiente_anterior * ( (1 + tasa_diaria_compensatoria) ^ dias_de_interes - 1 )
+        
+        DEFINIR interes_moratorio_devengado = 0
+        SI fecha_pago_actual > fecha_pago_calculada_original ENTONCES
+            // El pago es tardío respecto a la fecha original, se calcula mora.
+            CALCULAR dias_de_mora = fecha_pago_actual - fecha_pago_calculada_original
+            CALCULAR interes_moratorio_devengado = capital_pendiente_anterior * ( (1 + tasa_diaria_moratoria) ^ dias_de_mora - 1 )
+        FIN SI
+        
+        // --- FASE 2: CÁLCULO DE LA DEUDA TOTAL A LA FECHA ---
+        CALCULAR total_intereses_devengados = interes_compensatorio_devengado + interes_moratorio_devengado + SUS RESPECTIVOS IGV
+        CALCULAR deuda_total_a_la_fecha = capital_pendiente_anterior + total_intereses_devengados
+
+        // --- FASE 3: COMPARACIÓN CENTRAL Y DETERMINACIÓN DE ESTADO ---
+        SI deuda_total_a_la_fecha == monto_recibido ENTONCES // RESULTADO 1: IGUAL
+            DEFINIR estado_final = "LIQUIDADA"
+            DEFINIR nuevo_capital_pendiente = 0
+            DEFINIR saldo_a_favor = 0
+            
+        SINO SI deuda_total_a_la_fecha < monto_recibido ENTONCES // RESULTADO 2: MENOR (PAGO EN EXCESO)
+            DEFINIR estado_final = "LIQUIDADA (CON DEVOLUCIÓN)"
+            DEFINIR nuevo_capital_pendiente = 0
+            CALCULAR saldo_a_favor = monto_recibido - deuda_total_a_la_fecha
+	    ACA EXISTE UNA COMPARACION DELICADA QUE HACER: SE HAN FACTURADO INTERESES COMPENSATORIOS AL MOMENTO DE LA ORIGINACION. UN PAGO ANTICIPADO PUEDE GENERAR UNA DEVOLUCION DE
+	    INTERESES E IGV.LO QUE HABRA QUE COMPARAR ES EL DEVENGUE REAL DE INTERESES VS LOS INTERESES FACTURADOS . CAPTA QUE SE DEVUELVEN INTERESES EN EL CASO QUE EL PAGO RECIBIDO
+	    SEA MAYOR A TODO LO ADEUDADO. SI EL PAGO ES ANTICIPADO PODRIA MUY FACILMENTE HABER COBRADO MAS INTERESES DEL DEVENGUE REAL.
+            
+        SINO // RESULTADO 3: MAYOR (PAGO INSUFICIENTE)
+            DEFINIR estado_final = "EN PROCESO DE LIQUIDACIÓN"
+            CALCULAR nuevo_capital_pendiente = deuda_total_a_la_fecha - monto_recibido
+            DEFINIR saldo_a_favor = 0
+        FIN SI
+
+        // --- FASE 4: PREPARAR Y DEVOLVER RESULTADO DEL EVENTO ---
+        CONSTRUIR resultado_del_evento = {
+            estado_operacion: estado_final,
+            capital_final_pendiente: nuevo_capital_pendiente,
+            saldo_a_favor_cliente: saldo_a_favor,
+	    SE TIENE QUE ARRASTRAR SIEMPRE LOS VALORES DE LA ORIGINACION QUE SEAN RELEVANTES: FECHA DE PAGO CALCULADA, TASAS MORATORIA Y COMPENSATORIA, INTERESES MORATORIO
+	    FACTURADO..
+            // ... otros datos de desglose ...
+            
+            // Datos para pasar al siguiente evento (si aplica)
+            estado_para_siguiente_iteracion: {
+                nuevo_capital_pendiente: nuevo_capital_pendiente,
+                fecha_pago_calculada_original: fecha_pago_calculada_original,
+                fecha_del_ultimo_pago: fecha_pago_actual,
+                tasa_diaria_compensatoria: tasa_diaria_compensatoria, // <-- AÑADIDO
+                tasa_diaria_moratoria: tasa_diaria_moratoria       // <-- AÑADIDO
+            }
+        }
+        RETORNAR resultado_del_evento
+
+        FIN FUNCIÓN
+
+FIN PROGRAMA
+```

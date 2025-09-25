@@ -1,0 +1,89 @@
+### **PSEUDOCÓDIGO: ALGORITMO DE RECONCILIACIÓN DE INTERESES**
+
+```
+INICIO PROGRAMA
+
+    // =================================================================================
+    // FUNCIÓN: calcular_reconciliacion_liquidacion
+    // Calcula el ajuste final de una operación basado en intereses pre-cobrados.
+    // =================================================================================
+    FUNCIÓN calcular_reconciliacion_liquidacion(datos_evento)
+        INICIO FUNCIÓN
+
+        // --- FASE 1: LECTURA DE DATOS DEL EVENTO Y ORIGINACIÓN ---
+        LEER capital_desembolsado DE datos_evento
+        LEER interes_original_cobrado DE datos_evento
+        LEER igv_interes_original_cobrado DE datos_evento
+        LEER fecha_desembolso DE datos_evento
+        LEER fecha_pago_calculada_original DE datos_evento
+        LEER fecha_pago_actual DE datos_evento
+        LEER monto_recibido DE datos_evento
+        LEER tasa_compensatoria_pct DE datos_evento // Tasa mensual
+        LEER tasa_moratoria_pct DE datos_evento     // Tasa mensual
+
+        // --- FASE 2: CÁLCULO DEL INTERÉS REAL DEVENGADO ---
+        // Se define la base sobre la cual se calculan los intereses de liquidación.
+        CALCULAR base_calculo_liquidacion = capital_desembolsado + interes_original_cobrado + igv_interes_original_cobrado
+
+        CALCULAR tasa_diaria_compensatoria = tasa_compensatoria_pct / 30
+        CALCULAR dias_transcurridos = fecha_pago_actual - fecha_desembolso
+        CALCULAR interes_compensatorio_real = base_calculo_liquidacion * ( (1 + tasa_diaria_compensatoria) ^ dias_transcurridos - 1 )
+
+        DEFINIR interes_moratorio_real = 0
+        SI fecha_pago_actual > fecha_pago_calculada_original ENTONCES
+            CALCULAR tasa_diaria_moratoria = tasa_moratoria_pct / 30
+            CALCULAR dias_de_mora = fecha_pago_actual - fecha_pago_calculada_original
+            // La mora también se calcula sobre la deuda total inicial.
+            CALCULAR interes_moratorio_real = base_calculo_liquidacion * ( (1 + tasa_diaria_moratoria) ^ dias_de_mora - 1 )
+        FIN SI
+
+        CALCULAR interes_real_devengado_total = interes_compensatorio_real + interes_moratorio_real
+        CALCULAR igv_interes_real_devengado = interes_real_devengado_total * 0.18
+
+        // --- FASE 3: CÁLCULO DEL AJUSTE FINAL ---
+        CALCULAR ajuste_de_interes = interes_real_devengado_total - interes_original_cobrado
+        CALCULAR ajuste_de_igv = igv_interes_real_devengado - igv_interes_original_cobrado
+        CALCULAR ajuste_total = ajuste_de_interes + ajuste_de_igv
+
+        // --- FASE 4: DETERMINACIÓN DEL SALDO DE LA OPERACIÓN ---
+        CALCULAR deuda_total_final = capital_desembolsado + ajuste_total
+        CALCULAR saldo_final = deuda_total_final - monto_recibido
+
+        DEFINIR estado_final = ""
+        DEFINIR nuevo_capital_pendiente = 0
+        DEFINIR saldo_a_favor = 0
+
+        SI saldo_final == 0 ENTONCES
+            estado_final = "LIQUIDADA"
+        SINO SI saldo_final < 0 ENTONCES
+            estado_final = "LIQUIDADA (CON DEVOLUCIÓN)"
+            saldo_a_favor = VALOR_ABSOLUTO(saldo_final)
+        SINO // saldo_final > 0
+            estado_final = "EN PROCESO DE LIQUIDACIÓN"
+            nuevo_capital_pendiente = saldo_final
+        FIN SI
+
+        // --- FASE 5: PREPARAR Y DEVOLVER RESULTADO DEL EVENTO ---
+        CONSTRUIR resultado_del_evento = {
+            estado_operacion: estado_final,
+            capital_final_pendiente: nuevo_capital_pendiente,
+            saldo_a_favor_cliente: saldo_a_favor,
+            ajuste_intereses: ajuste_de_interes,
+            ajuste_igv: ajuste_de_igv,
+            // ... otros datos de desglose ...
+            
+            // Datos para pasar al siguiente evento (si aplica)
+            estado_para_siguiente_iteracion: {
+                nuevo_capital_pendiente: nuevo_capital_pendiente,
+                fecha_pago_calculada_original: fecha_pago_calculada_original,
+                fecha_del_ultimo_pago: fecha_pago_actual,
+                tasa_compensatoria_pct: tasa_compensatoria_pct,
+                tasa_moratoria_pct: tasa_moratoria_pct
+            }
+        }
+        RETORNAR resultado_del_evento
+
+        FIN FUNCIÓN
+
+FIN PROGRAMA
+```

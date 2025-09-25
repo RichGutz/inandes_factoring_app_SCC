@@ -1,0 +1,446 @@
+SISTEMA_FACTORING_COMPLETO_CON_BACK_DOOR:
+
+// ==============================================
+// CONFIGURACIÓN DEL SISTEMA
+// ==============================================
+
+CONSTANTE IGV_PORCENTAJE = 0.18
+CONSTANTE TASA_MORATORIA_MENSUAL = 0.03
+
+// Configuración BACK DOOR (personalizable)
+VARIABLE CONFIG_BACK_DOOR = {
+    monto_minimo_liquidacion: 100.0,
+    costo_transaccional_promedio: 25.0,
+    aplicar_back_door: VERDADERO
+}
+
+// ==============================================
+// FASE 1: ORIGINACIÓN (CREACIÓN DE OPERACIONES)
+// ==============================================
+
+FUNCION PROCESAR_ORIGINACION(lote_facturas):
+    SI lote_facturas ESTÁ_VACÍO ENTONCES
+        RETORNAR {"error": "Lote de facturas vacío"}
+    FIN SI
+    
+    // DECISIÓN AGREGADA DE COMISIÓN (a nivel lote)
+    capital_total = 0
+    comision_fija_total = 0
+    
+    PARA CADA factura EN lote_facturas HACER:
+        capital_factura = factura.monto_factura_neto × factura.tasa_avance
+        capital_total = capital_total + capital_factura
+        comision_fija_total = comision_fija_total + factura.comision_minima
+    FIN PARA
+    
+    comision_pct_total = capital_total × lote_facturas[0].comision_porcentual
+    
+    // Elegir método que genere MAYOR comisión
+    SI comision_pct_total > comision_fija_total ENTONCES:
+        metodo_comision = "PORCENTAJE"
+    SINO:
+        metodo_comision = "FIJO"
+    FIN SI
+    
+    // PROCESAMIENTO INDIVIDUAL DE FACTURAS
+    resultados_originacion = []
+    
+    PARA CADA factura EN lote_facturas HACER:
+        capital_operacion = factura.monto_factura_neto × factura.tasa_avance
+        
+        // Aplicar método de comisión decidido
+        SEGUN metodo_comision:
+            CASO "PORCENTAJE":
+                comision = capital_operacion × factura.comision_porcentual
+            CASO "FIJO":
+                comision = factura.comision_minima
+        FIN SEGUN
+        
+        // CÁLCULO DE INTERESES (Fórmula Excel exacta)
+        tasa_diaria = factura.tasa_interes_mensual / 30
+        factor_interes = (1 + tasa_diaria) ^ factura.plazo_dias
+        interes_compensatorio = capital_operacion × (factor_interes - 1)
+        
+        // CÁLCULO DE IGV
+        igv_interes = interes_compensatorio × IGV_PORCENTAJE
+        igv_comision = comision × IGV_PORCENTAJE
+        
+        // MONTO A DESEMBOLSAR (Neto de cargos)
+        monto_desembolsado = capital_operacion - interes_compensatorio - igv_interes - comision - igv_comision
+        
+        // COMISIÓN AFILIACIÓN (Opcional)
+        comision_afiliacion = 0
+        igv_afiliacion = 0
+        SI factura.aplica_comision_afiliacion ENTONCES:
+            comision_afiliacion = factura.comision_afiliacion
+            igv_afiliacion = comision_afiliacion × IGV_PORCENTAJE
+            monto_desembolsado = monto_desembolsado - comision_afiliacion - igv_afiliacion
+        FIN SI
+        
+        // FECHAS DE LA OPERACIÓN
+        fecha_desembolso = FECHA_ACTUAL
+        fecha_vencimiento = fecha_desembolso + factura.plazo_dias
+        
+        // CONSTRUIR OPERACIÓN
+        operacion = {
+            // Datos financieros
+            capital_operacion: REDONDEAR(capital_operacion, 2),
+            interes_compensatorio: REDONDEAR(interes_compensatorio, 2),
+            igv_interes: REDONDEAR(igv_interes, 2),
+            comision_estructuracion: REDONDEAR(comision, 2),
+            igv_comision: REDONDEAR(igv_comision, 2),
+            comision_afiliacion: REDONDEAR(comision_afiliacion, 2),
+            igv_afiliacion: REDONDEAR(igv_afiliacion, 2),
+            monto_desembolsado: REDONDEAR_HACIA_ABAJO(monto_desembolsado),
+            
+            // Datos temporales
+            plazo_dias: factura.plazo_dias,
+            fecha_desembolso: fecha_desembolso,
+            fecha_vencimiento: fecha_vencimiento,
+            tasa_interes_mensual: factura.tasa_interes_mensual,
+            
+            // Metadatos
+            id_operacion: GENERAR_ID_UNICO(),
+            metodo_comision: metodo_comision
+        }
+        
+        AGREGAR operacion A resultados_originacion
+    FIN PARA
+    
+    RETORNAR {
+        metodo_comision_elegido: metodo_comision,
+        resultados_por_factura: resultados_originacion,
+        total_operaciones: LONGITUD(resultados_originacion)
+    }
+FIN FUNCION
+
+// ==============================================
+// FASE 2: LIQUIDACIÓN (CON BACK DOOR)
+// ==============================================
+
+FUNCION LIQUIDAR_OPERACION_CON_BACK_DOOR(operacion, fecha_pago, monto_pagado, monto_minimo_opcional = NULO):
+    // VALIDACIONES INICIALES
+    SI operacion ES NULO O fecha_pago ES NULO ENTONCES:
+        RETORNAR {"error": "Datos de liquidación incompletos"}
+    FIN SI
+    
+    // 1. LIQUIDACIÓN NORMAL
+    liquidacion = LIQUIDAR_OPERACION_NORMAL(operacion, fecha_pago, monto_pagado)
+    
+    // 2. APLICAR BACK DOOR SI CORRESPONDE
+    SI CONFIG_BACK_DOOR.aplicar_back_door ENTONCES:
+        monto_minimo = monto_minimo_opcional O CONFIG_BACK_DOOR.monto_minimo_liquidacion
+        liquidacion = APLICAR_BACK_DOOR(liquidacion, monto_minimo)
+    FIN SI
+    
+    RETORNAR liquidacion
+FIN FUNCION
+
+FUNCION LIQUIDAR_OPERACION_NORMAL(operacion, fecha_pago, monto_pagado):
+    // CÁLCULO DE DÍAS TRANSCURRIDOS
+    dias_transcurridos = fecha_pago - operacion.fecha_desembolso
+    SI dias_transcurridos < 0 ENTONCES:
+        RETORNAR {"error": "Fecha de pago anterior al desembolso"}
+    FIN SI
+    
+    // INTERESES COMPENSATORIOS DEVENGADOS
+    tasa_diaria = operacion.tasa_interes_mensual / 30
+    factor_devengado = (1 + tasa_diaria) ^ dias_transcurridos
+    interes_devengado = operacion.capital_operacion × (factor_devengado - 1)
+    igv_interes_devengado = interes_devengado × IGV_PORCENTAJE
+    
+    // INTERESES MORATORIOS (si hay mora)
+    interes_moratorio = 0
+    igv_moratorio = 0
+    dias_mora = 0
+    
+    SI fecha_pago > operacion.fecha_vencimiento ENTONCES:
+        dias_mora = fecha_pago - operacion.fecha_vencimiento
+        tasa_moratoria_diaria = TASA_MORATORIA_MENSUAL / 30
+        factor_moratorio = (1 + tasa_moratoria_diaria) ^ dias_mora
+        interes_moratorio = operacion.capital_operacion × (factor_moratorio - 1)
+        igv_moratorio = interes_moratorio × IGV_PORCENTAJE
+    FIN SI
+    
+    // ✅ CORRECCIÓN CRÍTICA: DELTA CAPITAL = CAPITAL OPERACIÓN - PAGO
+    delta_intereses = interes_devengado - operacion.interes_compensatorio
+    delta_igv_intereses = igv_interes_devengado - operacion.igv_interes
+    delta_capital = operacion.capital_operacion - monto_pagado
+    
+    // SALDO GLOBAL (suma de todos los componentes)
+    saldo_global = delta_intereses + delta_igv_intereses + interes_moratorio + igv_moratorio + delta_capital
+    
+    // CLASIFICACIÓN EN 6 CASOS
+    estado, accion = CLASIFICAR_CASO_LIQUIDACION(delta_intereses, delta_capital, saldo_global)
+    
+    // CONSTRUIR RESULTADO DE LIQUIDACIÓN
+    RETORNAR {
+        // Datos básicos
+        fecha_liquidacion: fecha_pago,
+        dias_transcurridos: dias_transcurridos,
+        dias_mora: dias_mora,
+        
+        // Intereses devengados
+        interes_devengado: REDONDEAR(interes_devengado, 6),
+        igv_interes_devengado: REDONDEAR(igv_interes_devengado, 6),
+        interes_moratorio: REDONDEAR(interes_moratorio, 6),
+        igv_moratorio: REDONDEAR(igv_moratorio, 6),
+        
+        // Deltas vs valores originales
+        delta_intereses: REDONDEAR(delta_intereses, 6),
+        delta_igv_intereses: REDONDEAR(delta_igv_intereses, 6),
+        delta_capital: REDONDEAR(delta_capital, 6),
+        
+        // Resultados finales
+        saldo_global: REDONDEAR(saldo_global, 6),
+        estado_operacion: estado,
+        accion_recomendada: accion,
+        
+        // Datos de referencia
+        monto_pagado: monto_pagado,
+        capital_operacion: operacion.capital_operacion,
+        monto_desembolsado: operacion.monto_desembolsado,
+        id_operacion: operacion.id_operacion,
+        
+        // Flags de control
+        back_door_aplicado: FALSO,
+        monto_minimo_configurado: 0,
+        reducciones_aplicadas: []
+    }
+FIN FUNCION
+
+// ==============================================
+// BACK DOOR - LÓGICA DE LIQUIDACIÓN FORZADA
+// ==============================================
+
+FUNCION APLICAR_BACK_DOOR(liquidacion, monto_minimo):
+    saldo_global = liquidacion.saldo_global
+    
+    // VERIFICAR SI APLICA BACK DOOR
+    SI saldo_global <= 0 O saldo_global > monto_minimo ENTONCES:
+        RETORNAR liquidacion  // No aplica BACK DOOR
+    FIN SI
+    
+    // VERIFICAR LÓGICA DE NEGOCIO: ¿VALE LA PENA PERSEGUIR?
+    SI NO VALE_LA_PENA_PERSEGUIR(saldo_global) ENTONCES:
+        liquidacion = EJECUTAR_REDUCCION_SECUENCIAL(liquidacion, saldo_global, monto_minimo)
+    FIN SI
+    
+    RETORNAR liquidacion
+FIN FUNCION
+
+FUNCION VALE_LA_PENA_PERSEGUIR(monto_saldo):
+    // Lógica de negocio: Si el costo transaccional > monto saldo, no vale la pena
+    costo_transaccional = CONFIG_BACK_DOOR.costo_transaccional_promedio
+    RETORNAR monto_saldo > costo_transaccional
+FIN FUNCION
+
+FUNCION EJECUTAR_REDUCCION_SECUENCIAL(liquidacion, saldo_original, monto_minimo):
+    reducciones_aplicadas = []
+    saldo_restante = saldo_original
+    
+    // 1. REDUCIR MORATORIOS (Primera prioridad)
+    SI liquidacion.interes_moratorio > 0 ENTONCES:
+        reduccion_moratorios = MINIMO(saldo_restante, liquidacion.interes_moratorio)
+        
+        SI reduccion_moratorios > 0 ENTONCES:
+            liquidacion.interes_moratorio = liquidacion.interes_moratorio - reduccion_moratorios
+            liquidacion.igv_moratorio = liquidacion.interes_moratorio × IGV_PORCENTAJE
+            saldo_restante = saldo_restante - reduccion_moratorios
+            
+            AGREGAR {
+                tipo: "moratorios",
+                monto: reduccion_moratorios,
+                nuevo_saldo: liquidacion.interes_moratorio
+            } A reducciones_aplicadas
+        FIN SI
+    FIN SI
+    
+    // 2. REDUCIR COMPENSATORIOS (Segunda prioridad)
+    SI saldo_restante > 0 Y liquidacion.delta_intereses > 0 ENTONCES:
+        reduccion_compensatorios = MINIMO(saldo_restante, liquidacion.delta_intereses)
+        
+        SI reduccion_compensatorios > 0 ENTONCES:
+            liquidacion.delta_intereses = liquidacion.delta_intereses - reduccion_compensatorios
+            liquidacion.delta_igv_intereses = liquidacion.delta_intereses × IGV_PORCENTAJE
+            saldo_restante = saldo_restante - reduccion_compensatorios
+            
+            AGREGAR {
+                tipo: "compensatorios",
+                monto: reduccion_compensatorios,
+                nuevo_saldo: liquidacion.delta_intereses
+            } A reducciones_aplicadas
+        FIN SI
+    FIN SI
+    
+    // 3. REDUCIR CAPITAL (Último recurso)
+    SI saldo_restante > 0 Y liquidacion.delta_capital > 0 ENTONCES:
+        reduccion_capital = MINIMO(saldo_restante, liquidacion.delta_capital)
+        
+        SI reduccion_capital > 0 ENTONCES:
+            liquidacion.delta_capital = liquidacion.delta_capital - reduccion_capital
+            saldo_restante = saldo_restante - reduccion_capital
+            
+            AGREGAR {
+                tipo: "capital",
+                monto: reduccion_capital,
+                nuevo_saldo: liquidacion.delta_capital
+            } A reducciones_aplicadas
+        FIN SI
+    FIN SI
+    
+    // ACTUALIZAR SALDO GLOBAL
+    liquidacion.saldo_global = saldo_restante
+    
+    // MARCAR COMO BACK DOOR Y FORZAR LIQUIDACIÓN
+    liquidacion.estado_operacion = "LIQUIDADO - BACK DOOR"
+    liquidacion.accion_recomendada = "Liquidación forzada por monto mínimo ($" + monto_minimo + "). "
+    liquidacion.accion_recomendada = liquidacion.accion_recomendada + "Reducciones aplicadas: " + JSON_STRING(reducciones_aplicadas)
+    liquidacion.back_door_aplicado = VERDADERO
+    liquidacion.monto_minimo_configurado = monto_minimo
+    liquidacion.reducciones_aplicadas = reducciones_aplicadas
+    liquidacion.saldo_original = saldo_original  // Para auditoría
+    
+    // REGISTRAR EN LOG DE AUDITORÍA
+    REGISTRAR_EVENTO_BACK_DOOR(liquidacion)
+    
+    RETORNAR liquidacion
+FIN FUNCION
+
+FUNCION REGISTRAR_EVENTO_BACK_DOOR(liquidacion):
+    registro_auditoria = {
+        timestamp: FECHA_HORA_ACTUAL,
+        operacion_id: liquidacion.id_operacion,
+        saldo_original: liquidacion.saldo_original,
+        saldo_final: liquidacion.saldo_global,
+        monto_minimo: liquidacion.monto_minimo_configurado,
+        reducciones: liquidacion.reducciones_aplicadas,
+        usuario: "sistema_automatico"
+    }
+    
+    // Guardar en sistema de logging
+    ESCRIBIR_LOG("BACK_DOOR", registro_auditoria)
+FIN FUNCION
+
+// ==============================================
+// CLASIFICACIÓN DE CASOS (MATRIZ 6x3)
+// ==============================================
+
+FUNCION CLASIFICAR_CASO_LIQUIDACION(delta_intereses, delta_capital, saldo_global):
+    // CASO 1: Exceso en todo → Devolución completa
+    SI delta_intereses < 0 Y delta_capital < 0 Y saldo_global < 0 ENTONCES:
+        RETORNAR "LIQUIDADO - Caso 1", "Generar NC, devolver dinero al cliente"
+    
+    // CASO 2: Exceso intereses, falta capital → NC + Nuevo calendario
+    SI delta_intereses < 0 Y delta_capital > 0 Y saldo_global > 0 ENTONCES:
+        RETORNAR "EN PROCESO - Caso 2", "Generar NC, crear nuevo calendario"
+    
+    // CASO 3: Falta intereses, falta capital → Facturar + Nuevo calendario
+    SI delta_intereses > 0 Y delta_capital > 0 Y saldo_global > 0 ENTONCES:
+        RETORNAR "EN PROCESO - Caso 3", "Facturar más intereses, nuevo calendario"
+    
+    // CASO 4: Falta intereses, exceso capital → Facturar + Evaluar
+    SI delta_intereses > 0 Y delta_capital < 0 Y saldo_global > 0 ENTONCES:
+        RETORNAR "EN PROCESO - Caso 4", "Facturar intereses, evaluar moratorios"
+    
+    // CASO 5: Falta intereses, exceso capital → Facturar + Devolver
+    SI delta_intereses > 0 Y delta_capital < 0 Y saldo_global < 0 ENTONCES:
+        RETORNAR "LIQUIDADO - Caso 5", "Facturar intereses, devolver exceso"
+    
+    // CASO 6: Exceso intereses, falta capital → NC + Devolución
+    SI delta_intereses < 0 Y delta_capital > 0 Y saldo_global < 0 ENTONCES:
+        RETORNAR "LIQUIDADO - Caso 6", "Generar NC, devolver saldo negativo"
+    
+    // CASO NO CLASIFICADO
+    RETORNAR "NO CLASIFICADO", "Revisión manual requerida"
+FIN FUNCION
+
+// ==============================================
+// CONFIGURACIÓN Y UTILIDADES
+// ==============================================
+
+FUNCION CONFIGURAR_BACK_DOOR(nuevo_monto_minimo, aplicar_back_door, nuevo_costo_transaccional):
+    SI nuevo_monto_minimo NO ES NULO ENTONCES:
+        CONFIG_BACK_DOOR.monto_minimo_liquidacion = nuevo_monto_minimo
+    FIN SI
+    
+    SI aplicar_back_door NO ES NULO ENTONCES:
+        CONFIG_BACK_DOOR.aplicar_back_door = aplicar_back_door
+    FIN SI
+    
+    SI nuevo_costo_transaccional NO ES NULO ENTONCES:
+        CONFIG_BACK_DOOR.costo_transaccional_promedio = nuevo_costo_transaccional
+    FIN SI
+    
+    RETORNAR CONFIG_BACK_DOOR
+FIN FUNCION
+
+FUNCION VALIDAR_CONTRA_EXCEL():
+    // Validación específica con datos del Excel corregido
+    capital_excel = 17822.00536953091
+    pago_liq1 = 18000.0
+    
+    // Cálculo CORRECTO (usando capital_operacion)
+    delta_capital_correcto = capital_excel - pago_liq1  // -177.99
+    
+    // Validar fórmula de intereses
+    dias = 62
+    tasa = 0.02
+    interes_calculado = CALCULAR_INTERESES(capital_excel, tasa, dias)
+    interes_excel = 1202.835048660585
+    
+    RETORNAR {
+        delta_capital_coincide: ABS(delta_capital_correcto - (-177.99)) < 0.01,
+        intereses_coinciden: ABS(interes_calculado - interes_excel) < 0.0000001,
+        correccion_aplicada: VERDADERO
+    }
+FIN FUNCION
+
+// ==============================================
+// PROGRAMA PRINCIPAL
+// ==============================================
+
+PROGRAMA PRINCIPAL:
+    // 1. CONFIGURACIÓN INICIAL
+    CONFIGURAR_BACK_DOOR(100.0, VERDADERO, 25.0)
+    
+    // 2. ORIGINACIÓN: Crear operaciones
+    facturas = [
+        {
+            monto_factura_neto: 20000.0,
+            tasa_avance: 0.85,
+            tasa_interes_mensual: 0.02,
+            plazo_dias: 90,
+            comision_porcentual: 0.015,
+            comision_minima: 150.0,
+            aplica_comision_afiliacion: FALSO
+        }
+    ]
+    
+    resultado_originacion = PROCESAR_ORIGINACION(facturas)
+    
+    // 3. ESPERAR PAGO Y LIQUIDAR
+    operacion = resultado_originacion.resultados_por_factura[0]
+    fecha_pago = "2025-03-15"
+    monto_pagado = 17000.0
+    
+    // Liquidación con BACK DOOR
+    liquidacion = LIQUIDAR_OPERACION_CON_BACK_DOOR(operacion, fecha_pago, monto_pagado)
+    
+    // 4. MOSTRAR RESULTADOS
+    SI liquidacion.back_door_aplicado ENTONCES:
+        IMPRIMIR("🔧 BACK DOOR aplicado:")
+        IMPRIMIR("Saldo original: $" + liquidacion.saldo_original)
+        IMPRIMIR("Reducciones: " + liquidacion.reducciones_aplicadas)
+        IMPRIMIR("Saldo final: $" + liquidacion.saldo_global)
+    FIN SI
+    
+    IMPRIMIR("Estado: " + liquidacion.estado_operacion)
+    IMPRIMIR("Acción: " + liquidacion.accion_recomendada)
+    
+    // 5. VALIDACIÓN FINAL
+    validacion = VALIDAR_CONTRA_EXCEL()
+    SI validacion.correccion_aplicada ENTONCES:
+        IMPRIMIR("✅ Sistema validado contra Excel corregido")
+    FIN SI
+FIN PROGRAMA

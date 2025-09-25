@@ -1,40 +1,74 @@
-Instrucciones para lanzar en local:
+################################################################
+#  🚀 GUÍA DE LANZAMIENTO PARA VIBE CODERS COMO TÚ 🚀  #
+################################################################
+
+Hola! 👋
+
+Esta es la guía definitiva para lanzar el FRONTEND (la parte visual)
+en tu compu, conectándolo al BACKEND (el cerebro) que ya está en la nube.
+
+CERO STRESS. Solo sigue estos pasos en orden.
+
+---
+
+### PASO 1: ABRE LA TERMINAL CORRECTA 🖥️
+
+*   Busca "CMD" en el menú de inicio de Windows y abre el "Símbolo del sistema".
+*   (No uses PowerShell, usa el CMD de toda la vida para que los comandos funcionen).
 
 
-cd C:\Users\rguti\inandes_factoring_app_SCC
+### PASO 2: VE A LA CARPETA DEL PROYECTO 📂
 
-cd C:\Users\rguti\inandes_factoring_app_SCC\pages
+*   Copia y pega este comando en la terminal y presiona Enter:
 
-
-Configurar la URL del BACK:
-
-FONDO AZUL    $env:BACKEND_API_URL="https://inandes-back.onrender.com"   
-FONDO NEGRO   
-
-set BACKEND_API_URL=https://inandes-back.onrender.com  
-set SUPABASE_URL=https://bqyouppbgylodvdbctcf.supabase.co
-set SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxeW91cHBiZ3lsb2R2ZGJjdGNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5Mjk3MTcsImV4cCI6MjA2OTUwNTcxN30.cXRXV4Owm7nSQheyWHvjVxfE8mmuRGECxm6Pm3RSR4k
+    ```cmd
+    cd C:\Users\rguti\inandes_factoring_app_SCC
+    ```
 
 
+### PASO 3: DALE LOS SUPERPODERES (VARIABLES DE ENTORNO) ✨
 
-Lanzar el app
+*   Esto le dice a tu app dónde encontrar el backend y la base de datos.
+*   Copia y pega estos TRES comandos, uno por uno, presionando Enter después de cada uno:
 
-streamlit run 00_Home.py --server.port 8504
+    ```cmd
+    set BACKEND_API_URL=https://inandes-back.onrender.com
+    ```
 
-streamlit run 01_Operaciones.py
+    ```cmd
+    set SUPABASE_URL=https://bqyouppbgylodvdbctcf.supabase.co
+    ```
+
+    ```cmd
+    set SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxeW91cHBiZ3lsb2R2ZGJjdGNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5Mjk3MTcsImV4cCI6MjA2OTUwNTcxN30.cXRXV4Owm7nSQheyWHvjVxfE8mmuRGECxm6Pm3RSR4k
+    ```
 
 
+### PASO 4: ¡LANZAMIENTO! 🚀
 
+*   Ya estás listo. Copia y pega el comando final:
 
+    ```cmd
+    streamlit run 00_Home.py --server.port 8504
+    ```
 
+*   Se abrirá una pestaña en tu navegador. Si no, la terminal te dará una URL local (como http://localhost:8504) para que la abras manualmente.
 
+---
 
-GOOGLE CLOUD CONSOLE USUARIO RICH@KAIZENCAPITAL.PE
+### PREGUNTAS FRECUENTES (POR SI ACASO)
 
+**🤔 ¿Y el backend? ¿No lo tengo que lanzar?**
+No, ¡esa es la magia! Ya está corriendo en la nube en Render.com. Tu app se conecta sola a él gracias al "superpoder" del PASO 3.
+
+**❌ Me sale un error: "'streamlit' no se reconoce..."**
+Significa que no tienes Streamlit instalado. Cancela todo (Ctrl+C) y escribe `pip install streamlit` en la terminal. Luego, intenta el PASO 4 de nuevo.
+
+**🌐 Info para el Login con Google**
+Para que el login con Google funcione en tu compu, esta URL debe estar autorizada en la consola de Google Cloud:
+`http://localhost:8504`
+Link de la consola (usuario rich@kaizencapital.pe):
 https://console.cloud.google.com/apis/credentials?authuser=1&project=norse-feat-470703-u0
 
-Authorized JavaScript origins & Authorized redirect URIs
 
-http://localhost:8504
-
-https://inandesfactoringappscc-b9kgcfll5tleybysvbg9xn.streamlit.app
+¡LISTO! A rockear. 🤘
