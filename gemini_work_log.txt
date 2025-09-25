@@ -1,0 +1,2 @@
+LOG INICIADO: 
+- 2025-09-25: Añadir UI para subida de vouchers en liquidación universal (sin backend).
