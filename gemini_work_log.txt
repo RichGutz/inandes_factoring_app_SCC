@@ -1,2 +1,3 @@
 LOG INICIADO: 
 - 2025-09-25: Añadir UI para subida de vouchers en liquidación universal (sin backend).
+- 2025-09-25: Convertir y reformatear `Como se deber.txt` a `Como_se_deberia_usar.md`.
