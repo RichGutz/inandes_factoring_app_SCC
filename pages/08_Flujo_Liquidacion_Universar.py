@@ -9,53 +9,24 @@ st.set_page_config(
 
 st.title("Diagrama de Flujo del Proceso de Liquidación Universal")
 
-st.info("Este diagrama muestra los escenarios de liquidación. La lógica detallada se encuentra en el pseudocódigo.")
+st.info("Versión ultra-simplificada para evitar errores de sintaxis.")
 
 mermaid_code = """graph TD
-    A[Inicio: Liquidar Operación] --> B{Calcular Liquidación Normal};
-    B --> C[saldo_global calculado];
-
-    C --> D{saldo_global < 0 ?};
-    D -- Sí (Excedente) --> E[Estado: Pagado con Excedente];
-
-    D -- No --> F{saldo_global == 0 ?};
-    F -- Sí (Exacto) --> G[Estado: Pagado y Liquidado];
-
-    F -- No --> H{saldo_global > 0 ?};
-    H -- Sí (Deuda) --> I{Aplica Backdoor?};
-    
-    I -- Sí --> J[Proceso: Ejecutar Reducción Secuencial];
-    J --> K[Estado: LIQUIDADO - BACK DOOR];
-
+    A[Inicio] --> B{Calcular Liquidacion};
+    B --> C[Saldo Calculado];
+    C --> D{Saldo Menor a 0};
+    D -- Si --> E[Estado: Excedente];
+    D -- No --> F{Saldo Igual a 0};
+    F -- Si --> G[Estado: Liquidado];
+    F -- No --> H{Saldo Mayor a 0};
+    H -- Si --> I{Aplica Backdoor};
+    I -- Si --> J[Proceso: Reduccion Secuencial];
+    J --> K[Estado: Liquidado por Backdoor];
     I -- No --> L[Estado: Pago Parcial];
-
     E --> Z[Fin];
     G --> Z[Fin];
     K --> Z[Fin];
     L --> Z[Fin];
-
-    subgraph "Cálculo Base"
-        B
-    end
-
-    subgraph "Análisis de Escenarios"
-        C
-        D
-        F
-        H
-    end
-
-    subgraph "Lógica de Condonación (Backdoor)"
-        I
-        J
-    end
-
-    subgraph "Resultados Finales"
-        E
-        G
-        K
-        L
-    end
 """
 
 st_mermaid(mermaid_code, height="800px")
