@@ -26,6 +26,7 @@ def init_session_state():
         'resultados_liquidacion_universal': None,
         'global_liquidation_date_universal': datetime.date.today(),
         'global_backdoor_min_amount_universal': 100.0,
+        'vouchers_universales': {}, # <--- AÑADIDO: Para guardar los vouchers
     }
     for key, value in states.items():
         if key not in st.session_state:
@@ -78,6 +79,7 @@ def mostrar_liquidacion_universal():
         st.session_state.vista_actual_universal = 'busqueda'
         st.session_state.lote_encontrado_universal = []
         st.session_state.resultados_liquidacion_universal = None
+        st.session_state.vouchers_universales = {} # Limpiar vouchers al volver
         st.rerun()
 
     with st.form(key="universal_liquidation_form"):
@@ -95,16 +97,26 @@ def mostrar_liquidacion_universal():
                 monto_neto = safe_decimal(factura.get('monto_neto_factura'))
                 st.markdown(f"**Factura:** {parse_invoice_number(proposal_id)} | **Emisor:** {factura.get('emisor_nombre', 'N/A')} | **Monto Neto:** S/ {monto_neto:,.2f}")
                 
-                facturas_inputs[proposal_id] = st.number_input(
-                    "Monto Recibido", 
-                    value=float(monto_neto), 
-                    key=f"monto_{proposal_id}",
-                    format="%.2f"
-                )
+                col1, col2 = st.columns(2)
+                with col1:
+                    facturas_inputs[proposal_id] = st.number_input(
+                        "Monto Recibido", 
+                        value=float(monto_neto), 
+                        key=f"monto_{proposal_id}",
+                        format="%.2f"
+                    )
+                with col2:
+                    # <--- AÑADIDO: Uploader para el voucher de depósito ---
+                    st.session_state.vouchers_universales[proposal_id] = st.file_uploader(
+                        "Voucher de Depósito",
+                        type=["pdf", "png", "jpg", "jpeg"],
+                        key=f"uploader_{proposal_id}"
+                    )
 
         submit_button = st.form_submit_button("Calcular Liquidación Universal", type="primary")
 
     if submit_button:
+        # Lógica de cálculo (sin cambios)
         with st.spinner("Ejecutando nuevo motor de liquidación..."):
             sistema = SistemaFactoringCompleto()
             resultados_finales = []
@@ -223,4 +235,3 @@ if st.session_state.vista_actual_universal == 'busqueda':
     mostrar_busqueda_universal()
 elif st.session_state.vista_actual_universal == 'liquidacion':
     mostrar_liquidacion_universal()
-

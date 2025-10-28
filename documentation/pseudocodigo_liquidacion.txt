@@ -1,0 +1,140 @@
+### **PSEUDOCÓDIGO DEL CICLO DE VIDA DE FACTORING**
+
+---
+
+### **FASE 1: ORIGINACIÓN Y CÁLCULO DE DESEMBOLSO**
+
+```
+INICIO PROGRAMA FASE 1
+
+    // =================================================================================
+    // FUNCIÓN 1.1: Calcular Desembolso Inicial (cuando la tasa de avance es conocida)
+    // =================================================================================
+    FUNCIÓN FASE1_calcular_desembolso_inicial(plazo, monto_factura, tasa_avance, interes_mensual, comision_pct, comision_minima, igv_pct, comision_afiliacion_monto, aplicar_afiliacion)
+        INICIO FUNCIÓN
+
+        SI plazo < 0 ENTONCES
+            RETORNAR ERROR "El plazo no puede ser negativo"
+        FIN SI
+
+        // Cálculos básicos
+        capital = monto_factura * tasa_avance
+        tasa_diaria = interes_mensual / 30
+        interes = capital * ( (1 + tasa_diaria) ^ plazo - 1 )
+        igv_interes = interes * igv_pct
+
+        // Cálculo de la comisión de estructuración
+        comision_estructuracion_calculada = capital * comision_pct
+        comision_estructuracion_final = MÁXIMO(comision_estructuracion_calculada, comision_minima)
+        igv_comision = comision_estructuracion_final * igv_pct
+
+        // Cálculo del abono teórico inicial
+        abono_teorico = capital - interes - igv_interes - comision_estructuracion_final - igv_comision
+
+        // Aplicar comisión de afiliación si corresponde
+        comision_afiliacion_final = 0
+        igv_afiliacion = 0
+        SI aplicar_afiliacion ES VERDADERO ENTONCES
+            comision_afiliacion_final = comision_afiliacion_monto
+            igv_afiliacion = comision_afiliacion_final * igv_pct
+            abono_teorico = abono_teorico - (comision_afiliacion_final + igv_afiliacion)
+        FIN SI
+
+        // Cálculo de valores finales
+        monto_a_desembolsar = REDONDEAR_HACIA_ABAJO(abono_teorico)
+        margen_seguridad = monto_factura - capital
+
+        // Retornar todos los resultados
+        RETORNAR { capital, interes, igv_interes, comision_estructuracion_final, igv_comision, comision_afiliacion_final, igv_afiliacion, abono_teorico, monto_a_desembolsar, margen_seguridad, plazo }
+
+        FIN FUNCIÓN
+
+    // =================================================================================
+    // FUNCIÓN 1.2: Encontrar Tasa de Avance (para un monto objetivo de desembolso)
+    // =================================================================================
+    FUNCIÓN FASE1_encontrar_tasa_de_avance(plazo, monto_factura, interes_mensual, comision_pct, igv_pct, monto_objetivo, comision_minima, comision_afiliacion_monto, aplicar_afiliacion)
+        INICIO FUNCIÓN
+
+        // ... (Lógica interna de la función omitida por brevedad, es la misma que el original) ...
+
+        RETORNAR { tasa_avance_encontrada, abono_real_final, ... }
+
+        FIN FUNCIÓN
+
+FIN PROGRAMA FASE 1
+```
+
+---
+
+### **FASE 2: LIQUIDACIÓN DE PAGOS**
+
+```
+INICIO PROGRAMA FASE 2
+
+    // =================================================================================
+    // FUNCIÓN 2.1: Calcular Liquidación de un Evento de Pago
+    // =================================================================================
+    FUNCIÓN FASE2_calcular_liquidacion(datos_operacion, monto_recibido, fecha_pago_real, tasa_compensatoria_pct, tasa_moratoria_pct)
+        INICIO FUNCIÓN
+
+        // --- 1. EXTRACCIÓN Y VALIDACIÓN DE DATOS DE ENTRADA ---
+        LEER fecha_pago_esperada DE datos_operacion
+        SI fecha_pago_esperada ESTÁ VACÍO ENTONCES
+            RETORNAR ERROR "La 'fecha_pago_calculada' es inválida o no fue encontrada."
+        FIN SI
+
+        LEER capital_desembolsado DE datos_operacion
+        LEER interes_original DE datos_operacion
+        LEER plazo_operacion_original DE datos_operacion
+        LEER interes_mensual_pct DE datos_operacion
+        DEFINIR igv_pct = 0.18
+
+        // --- 2. CÁLCULOS INICIALES Y PREPARACIÓN DE TASAS ---
+        CALCULAR dias_diferencia = fecha_pago_real - fecha_pago_esperada
+        CALCULAR tasa_diaria_original = (interes_mensual_pct / 100) / 30
+        CALCULAR tasa_diaria_compensatoria = (tasa_compensatoria_pct / 100) / 30
+        CALCULAR tasa_diaria_moratoria = (tasa_moratoria_pct / 100) / 30
+
+        // --- 3. INICIALIZACIÓN DE VARIABLES PARA EL CÁLCULO ---
+        DEFINIR interes_compensatorio_final = 0
+        DEFINIR igv_interes_compensatorio_final = 0
+        DEFINIR interes_moratorio_final = 0
+        DEFINIR igv_interes_moratorio_final = 0
+        DEFINIR interes_a_devolver_final = 0
+        DEFINIR igv_interes_a_devolver_final = 0
+
+        // --- 4. LÓGICA DE CÁLCULO PRINCIPAL SEGÚN EL TIPO DE PAGO ---
+        SI dias_diferencia > 0 ENTONCES // CASO: PAGO TARDÍO
+            CALCULAR interes_compensatorio_final = capital_desembolsado * ( (1 + tasa_diaria_compensatoria) ^ dias_diferencia - 1 )
+            CALCULAR igv_interes_compensatorio_final = interes_compensatorio_final * igv_pct
+
+            CALCULAR interes_moratorio_final = capital_desembolsado * ( (1 + tasa_diaria_moratoria) ^ dias_diferencia - 1 )
+            CALCULAR igv_interes_moratorio_final = interes_moratorio_final * igv_pct
+
+        SINO SI dias_diferencia < 0 ENTONCES // CASO: PAGO ANTICIPADO
+            CALCULAR dias_anticipacion = VALOR_ABSOLUTO(dias_diferencia)
+            CALCULAR plazo_real = plazo_operacion_original - dias_anticipacion
+            SI plazo_real < 0 ENTONCES
+                plazo_real = 0
+            FIN SI
+
+            CALCULAR interes_real_calculado = capital_desembolsado * ( (1 + tasa_diaria_original) ^ plazo_real - 1 )
+            CALCULAR interes_a_devolver_final = interes_original - interes_real_calculado
+            SI interes_a_devolver_final < 0 ENTONCES
+                interes_a_devolver_final = 0
+            FIN SI
+            CALCULAR igv_interes_a_devolver_final = interes_a_devolver_final * igv_pct
+        FIN SI
+
+        // --- 5. CÁLCULO DEL SALDO FINAL ---
+        CALCULAR total_cargos = interes_compensatorio_final + igv_interes_compensatorio_final + interes_moratorio_final + igv_interes_moratorio_final
+        CALCULAR saldo_final = (capital_desembolsado + total_cargos) - monto_recibido
+
+        // --- 6. PREPARAR Y DEVOLVER EL RESULTADO ---
+        CONSTRUIR resultado_detallado = { ... }
+        RETORNAR resultado_detallado
+
+        FIN FUNCIÓN
+
+FIN PROGRAMA FASE 2
+```

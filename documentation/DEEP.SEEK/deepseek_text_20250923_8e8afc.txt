@@ -1,0 +1,63 @@
+
+## 🔄 **DIAGRAMA Mermaid COMPLETO** (`diagrama_flujo.mmd`)
+
+```mermaid
+flowchart TD
+    A[🚀 Iniciar Liquidación] --> B[📥 Recibir Datos de Entrada]
+    
+    B --> C[✅ Validar Datos]
+    C --> D{❌ Datos Válidos?}
+    D -->|No| E[⏹️ Terminar con Error]
+    D -->|Sí| F[🧮 Calcular Intereses Devengados]
+    
+    F --> G[💳 Aplicar Jerarquía de Pago]
+    G --> H[📊 Calcular Deltas]
+    
+    H --> I[ΔComp = Devengado - Cobrado]
+    H --> J[ΔCapital = Pago - Capital]
+    I --> K[💰 Saldo Global = ΔComp + ΔCapital]
+    J --> K
+    
+    K --> L{🔍 Análisis de Viabilidad}
+    L -->|Saldo < $10| M[📦 LIQUIDADO<br>Saldo Insignificante]
+    L -->|Saldo ≥ $10| N{📈 Saldo Global > 0?}
+    
+    N -->|Sí| O[🔄 LIQUIDACIÓN EN PROCESO<br>Cliente debe al Fondo]
+    N -->|No| P[✅ LIQUIDADO<br>Fondo debe al Cliente]
+    
+    O --> Q{🔢 Clasificar Caso}
+    P --> Q
+    
+    Q --> R[• ΔComp: NEGATIVO<br>• ΔCapital: POSITIVO<br>• Saldo: POSITIVO]
+    Q --> S[• ΔComp: POSITIVO<br>• ΔCapital: NEGATIVO<br>• Saldo: NEGATIVO]
+    Q --> T[• ΔComp: NEGATIVO<br>• ΔCapital: POSITIVO<br>• Saldo: NEGATIVO]
+    Q --> U[• ΔComp: POSITIVO<br>• ΔCapital: NEGATIVO<br>• Saldo: POSITIVO]
+    
+    R --> V[🎯 Caso 1]
+    S --> W[🎯 Caso 2]
+    T --> X[🎯 Caso 3]
+    U --> Y[🎯 Caso 4]
+    
+    V --> Z[📋 Generar Acciones Caso 1]
+    W --> AA[📋 Generar Acciones Caso 2]
+    X --> BB[📋 Generar Acciones Caso 3]
+    Y --> CC[📋 Generar Acciones Caso 4]
+    
+    Z --> DD[📤 Retornar Resultado Completo]
+    AA --> DD
+    BB --> DD
+    CC --> DD
+    M --> DD
+    
+    DD --> EE[🏁 Liquidación Completada]
+    
+    %% Estilos para mejor visualización
+    classDef green fill:#d4f7d4,stroke:#0a0,stroke-width:2px
+    classDef red fill:#f7d4d4,stroke:#a00,stroke-width:2px
+    classDef blue fill:#d4e6f7,stroke:#06c,stroke-width:2px
+    classDef yellow fill:#f7f0d4,stroke:#c90,stroke-width:2px
+    
+    class O,P green
+    class M blue
+    class V,W,X,Y yellow
+    class E red

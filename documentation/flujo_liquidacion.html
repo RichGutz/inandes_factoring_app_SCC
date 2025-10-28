@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flujo del Módulo de Liquidación</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="mermaid">
+        graph TD
+            SW_MODULO_LIQUIDACION["Módulo Liquidación"];
+            SW_MODULO_LIQUIDACION --> SW_RECEPCION_PAGO["Recibir evidencia de pago (voucher)"];
+            SW_RECEPCION_PAGO --> SW_COMPARAR_FECHAS["Comparar Fecha de Pago Real vs. Fecha Esperada"];
+            SW_COMPARAR_FECHAS --> TIPO_PAGO{Completo o Parcial};
+
+            subgraph "Pago Completo"
+                TIPO_PAGO --o|Completo| TIPO_PAGO_COMPLETO{Tipo de Pago};
+                TIPO_PAGO_COMPLETO --o|Anticipado| SW_PAGO_ANTICIPADO["SW Calcula intereses en exceso"];
+                SW_PAGO_ANTICIPADO --> SW_GEN_NC["SW Registra necesidad de Nota de Crédito (Neteo)"];
+                SW_GEN_NC --> CIERRE_FINAL;
+                TIPO_PAGO_COMPLETO --o|A Tiempo| CIERRE_FINAL;
+                TIPO_PAGO_COMPLETO --o|Tardío| SW_PAGO_TARDIO["SW Calcula Intereses Compensatorios y Moratorios"];
+                SW_PAGO_TARDIO --> SW_GEN_FACTURA["SW Registra necesidad de Nueva Factura por intereses"];
+                SW_GEN_FACTURA --> CIERRE_FINAL;
+            end
+
+            subgraph "Pago Parcial"
+                TIPO_PAGO --o|Parcial| TIPO_PAGO_PARCIAL["Registrar abono y recalcular saldo"];
+                TIPO_PAGO_PARCIAL --> SW_RECEPCION_PAGO;
+            end
+            
+            CIERRE_FINAL["Marcar Operación como LIQUIDADA"];
+
+            classDef module fill:#ffcc00,stroke:#333,stroke-width:2px;
+            class SW_MODULO_LIQUIDACION module;
+    </div>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true });
+    </script>
+</body>
+</html>

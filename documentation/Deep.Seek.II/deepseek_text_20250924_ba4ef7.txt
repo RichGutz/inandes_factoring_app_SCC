@@ -1,0 +1,84 @@
+INICIO SistemaLiquidacionesComprehensive
+
+    // PARÁMETROS PRINCIPALES
+    DEFINIR fecha_desembolso, capital, tasa_compensatoria, tasa_moratoria, fecha_pago
+    DEFINIR intereses_cobrados, igv_intereses_cobrados, desembolso_total
+    
+    // DATOS DE LIQUIDACIONES
+    DEFINIR liquidaciones = [
+        {nombre: "Liquidacion1", fecha: fecha1, pago: 17000},
+        {nombre: "Liquidacion2", fecha: fecha2, pago: 15712.74},
+        {nombre: "Liquidacion3", fecha: fecha3, pago: 16244.9353},
+        {nombre: "Liquidacion4A", fecha: fecha4, pago: 15000}
+    ]
+    
+    // FUNCIÓN CALCULAR INTERESES (FÓRMULA EXCEL)
+    FUNCIÓN calcular_intereses(fecha_inicio, fecha_fin, capital, tasa_mensual)
+        días = DIFERENCIA_DIAS(fecha_fin, fecha_inicio)
+        tasa_diaria = tasa_mensual / 30
+        factor = POTENCIA((1 + tasa_diaria), días)
+        RETORNAR (factor - 1) * capital
+    FIN FUNCIÓN
+    
+    // PROCESAR CADA LIQUIDACIÓN
+    PARA CADA liquidación EN liquidaciones HACER
+        
+        // INTERESES COMPENSATORIOS
+        int_compensatorios = calcular_intereses(fecha_desembolso, liquidación.fecha, capital, 0.02)
+        igv_compensatorios = int_compensatorios * 0.18
+        
+        // INTERESES MORATORIOS (si aplica)
+        SI liquidación.fecha > fecha_pago ENTONCES
+            int_moratorios = calcular_intereses(fecha_pago, liquidación.fecha, capital, 0.03)
+            igv_moratorios = int_moratorios * 0.18
+        SINO
+            int_moratorios = 0
+            igv_moratorios = 0
+        FIN SI
+        
+        // CÁLCULO DE DELTAS
+        delta_compensatorios = int_compensatorios - intereses_cobrados
+        delta_capital = desembolso_total - liquidación.pago
+        saldo_global = delta_compensatorios + delta_capital
+        
+        // CLASIFICACIÓN SEGÚN 6 CASOS
+        SEGÚN (delta_compensatorios, delta_capital, saldo_global) HACER
+            CASO (NEGATIVO, NEGATIVO, NEGATIVO):
+                estado = "LIQUIDADO - Caso 1"
+                acción = "Generar NC, devolver dinero"
+                
+            CASO (NEGATIVO, POSITIVO, POSITIVO):
+                estado = "EN PROCESO - Caso 2"
+                acción = "Generar NC, nuevo calendario"
+                
+            CASO (POSITIVO, POSITIVO, POSITIVO):
+                estado = "EN PROCESO - Caso 3"
+                acción = "Facturar más intereses, nuevo calendario"
+                
+            CASO (POSITIVO, NEGATIVO, POSITIVO):
+                estado = "EN PROCESO - Caso 4"
+                acción = "Facturar más intereses, nuevo calendario"
+                
+            CASO (POSITIVO, NEGATIVO, NEGATIVO):
+                estado = "LIQUIDADO - Caso 5"
+                acción = "Facturar intereses, devolver exceso"
+                
+            CASO (NEGATIVO, POSITIVO, NEGATIVO):
+                estado = "LIQUIDADO - Caso 6"
+                acción = "Generar NC, devolver dinero"
+                
+            DEFECTO:
+                estado = "NO CLASIFICADO"
+                acción = "Revisar manualmente"
+        FIN SEGÚN
+        
+        // REGISTRAR RESULTADO
+        AGREGAR_A_RESULTADOS(liquidación.nombre, liquidación.fecha, días, 
+                           int_compensatorios, delta_compensatorios, delta_capital,
+                           saldo_global, estado, acción)
+    FIN PARA
+    
+    // GENERAR REPORTE FINAL
+    IMPRIMIR_RESULTADOS()
+    
+FIN SistemaLiquidacionesComprehensive

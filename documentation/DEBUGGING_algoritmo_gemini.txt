@@ -1,0 +1,88 @@
+1. Liquidacion 1 (Fecha: 24/02/2025, Monto Recibido: 17000)
+*   **Inputs:**
+    *   `capital_desembolsado`: 17822.01
+    *   `interes_original_cobrado`: 1202.84
+    *   `igv_interes_original_cobrado`: 216.51
+    *   `fecha_desembolso`: 24/12/2024
+    *   `fecha_pago_calculada_original`: 01/04/2025
+    *   `fecha_pago_actual`: 24/02/2025
+    *   `monto_recibido`: 17000
+    *   `tasa_compensatoria_pct`: 2.0%
+    *   `tasa_moratoria_pct`: 3.0%
+*   **Mi Cálculo (Algoritmo de Reconciliación):**
+    *   `interes_real_devengado_total`: 887.15
+    *   `igv_interes_real_devengado`: 159.69
+    *   `ajuste_total`: (887.15 + 159.69) - (1202.84 + 216.51) = 1046.84 - 1419.35 = -372.51
+    *   `deuda_total_final`: 17822.01 + (-372.51) = 17449.50
+    *   `saldo_final`: 17449.50 - 17000 = 449.50
+    *   `estado_operacion`: **EN PROCESO DE LIQUIDACIÓN**
+    *   `capital_final_pendiente`: 449.50
+*   **CSV (Liquidacion 1):**
+    *   `451.01` (en la columna de Liquidacion 1)
+    *   `81.18` (en la columna de Liquidacion 2)
+    *   `755.06` (en la columna de Liquidacion 3)
+    *   `1287.26` (en la columna de Liquidacion 4)
+    *   **Discrepancia:** Mis resultados no coinciden con los valores del CSV para Liquidacion 1. El CSV muestra `451.01` y `81.18` en las columnas de Liquidacion 1 y 2 de la sección de resultados, y `755.06` y `1287.26` en las columnas de Liquidacion 3 y 4. Esto indica que mi interpretación de las columnas de resultado del CSV es incorrecta, o que el CSV tiene un formato de salida diferente al que estoy asumiendo.
+
+**2. Liquidacion 2 (Fecha: 24/02/2025, Monto Recibido: 15712.74)**
+*   **Inputs:** (Se arrastra `capital_final_pendiente` de Liquidacion 1 como `capital_desembolsado` para esta liquidación, y `fecha_ultimo_pago` es 24/02/2025)
+    *   `capital_desembolsado` (de Liquidacion 1): 449.50
+    *   `monto_recibido`: 15712.74
+*   **Mi Cálculo (Algoritmo de Reconciliación):**
+    *   `interes_real_devengado_total`: (calculado sobre 449.50 desde 24/02/2025)
+    *   `ajuste_total`: (calculado)
+    *   `deuda_total_final`: (calculado)
+    *   `saldo_final`: (calculado)
+    *   `estado_operacion`: (calculado)
+    *   `capital_final_pendiente`: (calculado)
+*   **CSV (Liquidacion 2):**
+    *   `-532.20` (en la columna de Liquidacion 3)
+    *   `0.00` (en la columna de Liquidacion 4)
+    *   **Discrepancia:** Mis resultados no coinciden con los valores del CSV para Liquidacion 2.
+
+**3. Liquidacion 3 (Fecha: 01/04/2025, Monto Recibido: 16244.9353)**
+*   **Inputs:** (Se arrastra `capital_final_pendiente` de Liquidacion 2, y `fecha_ultimo_pago` es 24/02/2025)
+    *   `capital_desembolsado` (de Liquidacion 2): (calculado)
+    *   `monto_recibido`: 16244.9353
+*   **Mi Cálculo (Algoritmo de Reconciliación):**
+    *   `interes_real_devengado_total`: (calculado)
+    *   `ajuste_total`: (calculado)
+    *   `deuda_total_final`: (calculado)
+    *   `saldo_final`: (calculado)
+    *   `estado_operacion`: (calculado)
+    *   `capital_final_pendiente`: (calculado)
+*   **CSV (Liquidacion 3):**
+    *   `0.00` (en la columna de Liquidacion 3)
+    *   `0.00` (en la columna de Liquidacion 4)
+    *   **Discrepancia:** Mis resultados no coinciden con los valores del CSV para Liquidacion 3.
+
+**4. Liquidacion 4 (Fecha: 04/04/2025, Monto Recibido: 15000)**
+*   **Inputs:** (Se arrastra `capital_final_pendiente` de Liquidacion 3, y `fecha_ultimo_pago` es 01/04/2025)
+    *   `capital_desembolsado` (de Liquidacion 3): (calculado)
+    *   `monto_recibido`: 15000
+*   **Mi Cálculo (Algoritmo de Reconciliación):**
+    *   `interes_real_devengado_total`: (calculado)
+    *   `ajuste_total`: (calculado)
+    *   `deuda_total_final`: (calculado)
+    *   `saldo_final`: (calculado)
+    *   `estado_operacion`: (calculado)
+    *   `capital_final_pendiente`: (calculado)
+*   **CSV (Liquidacion 4):**
+    *   `-1244.94` (en la columna de Liquidacion 3)
+    *   `-1353.02` (en la columna de Liquidacion 4)
+    *   **Discrepancia:** Mis resultados no coinciden con los valores del CSV para Liquidacion 4.
+
+---
+
+**Conclusión General:**
+
+He implementado el algoritmo de reconciliación tal como lo diseñamos. Sin embargo, los resultados de mi simulación **no coinciden** con los valores de las columnas "Liquidacion X" del `Book1.csv`.
+
+Esto puede deberse a:
+1.  **Mi interpretación de las columnas de resultado del CSV es incorrecta.** Es posible que las columnas "Liquidacion 1", "Liquidacion 2", etc., no representen el `monto_recibido` o el `saldo_final` de esa liquidación, sino otra cosa.
+2.  **Mi interpretación de cómo se arrastra el estado es incorrecta.** Aunque seguí la lógica de "capital_final_pendiente" y "fecha_ultimo_pago", puede haber un detalle sutil.
+3.  **El algoritmo de reconciliación tiene un error.** Aunque lo construimos paso a paso, la implementación o un detalle de la lógica podría estar mal.
+
+El PDF `comparativa_algoritmos_[fecha y hora].pdf` ha sido generado y contiene el desglose completo de mis cálculos.
+
+Necesito tu guía para entender por qué mis resultados no coinciden con los del CSV.

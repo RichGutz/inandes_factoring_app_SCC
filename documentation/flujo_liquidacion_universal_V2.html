@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flujo del Algoritmo de Liquidación Universal</title>
+    <style>
+        body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+    </style>
+</head>
+<body>
+    <div class="mermaid">
+        graph TD
+            A[Inicio de Evento de Pago] --> B{Leer Datos del Evento};
+            B --> C[Calcular Intereses Devengados];
+            C --> D[Calcular Deuda Total a la Fecha];
+            D --> E{Deuda vs. Monto Recibido};
+            
+            E -- "Deuda == Monto" --> F[Estado: LIQUIDADA];
+            E -- "Deuda < Monto" --> G[Calcular Saldo a Favor];
+            G --> H[Estado: LIQUIDADA (con devolución)];
+            
+            E -- "Deuda > Monto" --> I[Calcular Nuevo Capital Pendiente];
+            I --> J[Estado: EN PROCESO DE LIQUIDACIÓN];
+
+            classDef final fill:#d4edda,stroke:#155724,stroke-width:2px;
+            classDef proceso fill:#fff3cd,stroke:#856404,stroke-width:2px;
+            class F,H final;
+            class J proceso;
+    </div>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true });
+    </script>
+</body>
+</html>

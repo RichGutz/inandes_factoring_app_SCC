@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flujo: Liquidación 1 con Saldo Positivo</title>
+    <style>
+        body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+    </style>
+</head>
+<body>
+    <div class="mermaid">
+        graph TD
+            A[Inicio: Liquidacion 1] --> B{Datos de Entrada L1<br/>(capital_desembolsado, interes_original_cobrado, etc.)};
+            B --> C[Calcular Intereses Reales Devengados<br/>(compensatorio + moratorio si aplica)];
+            C --> D[Calcular Ajuste Final<br/>(intereses_reales - intereses_originales)];
+            D --> E[Calcular Deuda Total Final<br/>(capital_desembolsado + ajuste_final)];
+            E --> F{Comparar Deuda Total Final vs. Monto Recibido L1};
+            
+            F -- "Deuda == Monto" --> G[Estado: LIQUIDADA];
+            F -- "Deuda < Monto" --> H[Estado: LIQUIDADA (con devolución)];
+            F -- "Deuda > Monto" --> I[Calcular Nuevo Capital Pendiente<br/>(saldo_final = Deuda - Monto)];
+            I --> J[Estado: EN PROCESO DE LIQUIDACIÓN];
+            J --> K[Fin: Preparar para Liquidacion 2<br/>(nuevo_capital_pendiente, fecha_ultimo_pago, etc.)];
+
+            classDef final fill:#d4edda,stroke:#155724,stroke-width:2px;
+            classDef proceso fill:#fff3cd,stroke:#856404,stroke-width:2px;
+            class G,H final;
+            class J proceso;
+    </div>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true });
+    </script>
+</body>
+</html>
