@@ -9,9 +9,11 @@ st.set_page_config(
 
 st.title("Diagrama de Flujo del Proceso de Liquidación Universal")
 
+st.info("Este diagrama muestra los escenarios de liquidación. La lógica detallada se encuentra en el pseudocódigo.")
+
 mermaid_code = """graph TD
     A[Inicio: Liquidar Operación] --> B{Calcular Liquidación Normal};
-    B --> C{saldo_global calculado};
+    B --> C[saldo_global calculado];
 
     C --> D{saldo_global < 0 ?};
     D -- Sí (Excedente) --> E[Estado: Pagado con Excedente];
@@ -20,12 +22,12 @@ mermaid_code = """graph TD
     F -- Sí (Exacto) --> G[Estado: Pagado y Liquidado];
 
     F -- No --> H{saldo_global > 0 ?};
-    H -- Sí (Deuda) --> I{Aplica Backdoor? <br/> saldo_global <= monto_minimo <br/> Y <br/> saldo_global <= costo_cobranza};
+    H -- Sí (Deuda) --> I{Aplica Backdoor?};
     
     I -- Sí --> J[Proceso: Ejecutar Reducción Secuencial];
     J --> K[Estado: LIQUIDADO - BACK DOOR];
 
-    I -- No --> L[Estado: Pago Parcial <br/> (Deuda es muy grande)];
+    I -- No --> L[Estado: Pago Parcial];
 
     E --> Z[Fin];
     G --> Z[Fin];
